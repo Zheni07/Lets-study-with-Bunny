@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <title>Да учим с Бъни</title>
+
+    <!-- Шрифт -->
+    <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- JS -->
+    <script defer src="js/main.js"></script>
+</head>
+<body>
+
+<header class="header">
+    <div class="logo-area">
+        <img src="assets/images/logo.png" alt="Лого Бъни" class="logo">
+    </div>
+    <nav class="nav">
+        <a href="index.html" class="active">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="login.html">Вход</a>
+        <a href="register.html">Регистрация</a>
+    </nav>
+</header>
+
+<section class="bunny-banner">
+    <div class="background-animation">
+        <div class="bubble bubble1"></div>
+        <div class="bubble bubble2"></div>
+        <div class="bubble bubble3"></div>
+        <div class="bubble bubble4"></div>
+        <div class="bubble bubble5"></div>
+        <div class="bubble bubble6"></div>
+        <div class="bubble bubble7"></div>
+        <div class="bubble bubble8"></div>
+        <div class="bubble bubble9"></div>
+        <div class="bubble bubble10"></div>
+    </div>
+
+    <div class="white-card bunny-content-row">
+    <!-- Лява колона: балонче + зайче -->
+    <div class="bunny-left-column">
+        <div class="speech-bubble" id="bunny-text">
+            <p>Здравей! Аз съм Бъни и тук ще се учим заедно! Натисни ме, за да си приказваме!</p>
+        </div>
+
+        <img src="assets/images/bunny.png" alt="Бъни" id="bunny">
+
+        <audio id="bunny-audio" src="assets/audio/bunny.mp3" preload="auto"></audio>
+    </div>
+
+    <!-- Дясна колона: текст + бутон -->
+    <div class="bunny-right-column">
+        <h2>Добре дошли в „Да учим с Бъни“!</h2>
+        <p>Тук ще откриете забавни игри и полезни упражнения за четене и писане.</p>
+
+        <a href="games.html" class="btn play-btn">Играй сега</a>
+    </div>
+</div>
+
+
+</section>
+
+<section class="articles">
+    <div class="white-card">
+        <h2>Полезни статии за родители и учители</h2>
+        <div class="articles-container">
+            <div class="article-card">
+                <h3>Какво е дислексия?</h3>
+                <p>Кратко обяснение за дислексията и как да помогнем на децата.</p>
+                <button class="btn read-more">Прочети повече</button>
+            </div>
+
+            <div class="article-card">
+                <h3>Игри за развитие на четенето</h3>
+                <p>Идеи за упражнения и забавни игри.</p>
+                <button class="btn read-more">Прочети повече</button>
+            </div>
+
+            <div class="article-card">
+                <h3>Как да подкрепим детето у дома</h3>
+                <p>Съвети за родителите.</p>
+                <button class="btn read-more">Прочети повече</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="contact">
+    <div class="white-card">
+        <h2>Свържи се с нас</h2>
+        <form>
+            <div class="form-group">
+                <label>Име</label>
+                <input type="text" placeholder="Твоето име" required>
+            </div>
+            <div class="form-group">
+                <label>Имейл</label>
+                <input type="email" placeholder="Имейл" required>
+            </div>
+            <div class="form-group">
+                <label>Съобщение</label>
+                <textarea placeholder="Твоето съобщение" required></textarea>
+            </div>
+            <button type="submit" class="btn">Изпрати</button>
+        </form>
+    </div>
+</section>
+
+<footer>
+    <p>© 2026 Да учим с Бъни</p>
+</footer>
+
+</body>
+</html>
