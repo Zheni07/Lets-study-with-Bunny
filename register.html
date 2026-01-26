@@ -12,25 +12,23 @@
     <div class="logo-area">
         <img src="assets/images/logo.png" alt="Лого Бъни" class="logo">
     </div>
-    <nav class="nav">
-        <a href="index.html">Начало</a>
-        <a href="games.html">Игри</a>
-        <a href="login.html">Вход</a>
-        <a href="register.html" class="active">Регистрация</a>
-    </nav>
+    <!-- Навигацията ще се зарежда според ролята -->
+    <nav class="nav" id="nav"></nav>
 </header>
 
 <section class="register-section">
     <div class="white-card form-card">
         <h2>Регистрация</h2>
-        <form>
+
+        <!-- Добавяме onsubmit -->
+        <form onsubmit="event.preventDefault(); registerUser();">
             <div class="form-group">
                 <label>Име</label>
                 <input type="text" placeholder="Въведи име" required>
             </div>
             <div class="form-group">
                 <label>Имейл</label>
-                <input type="email" placeholder="Въведи имейл" required>
+                <input type="email" id="email" placeholder="Въведи имейл" required>
             </div>
             <div class="form-group">
                 <label>Парола</label>
@@ -38,6 +36,7 @@
             </div>
             <button type="submit" class="btn">Регистрация</button>
         </form>
+
         <p>Вече имаш акаунт? <a href="login.html">Вход</a></p>
     </div>
 </section>
@@ -45,6 +44,47 @@
 <footer>
     <p>© 2026 Да учим с Бъни</p>
 </footer>
+
+<!-- JS -->
+<script src="js/auth.js"></script>
+
+<script>
+/* Меню според ролята */
+const role = getRole();
+const nav = document.getElementById("nav");
+
+if (role === "guest") {
+    nav.innerHTML = `
+        <a href="index.html">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="login.html">Вход</a>
+        <a href="register.html" class="active">Регистрация</a>
+    `;
+}
+
+if (role === "user") {
+    nav.innerHTML = `
+        <a href="index.html">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="#" onclick="logout()">Изход</a>
+    `;
+}
+
+if (role === "admin") {
+    nav.innerHTML = `
+        <a href="index.html">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="admin.html">Админ панел</a>
+        <a href="#" onclick="logout()">Изход</a>
+    `;
+}
+
+/* Фалшива регистрация */
+function registerUser() {
+    // Всеки регистриран става обикновен потребител
+    login("user");
+}
+</script>
 
 </body>
 </html>

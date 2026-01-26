@@ -6,6 +6,50 @@
     <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
+
+<script src="js/auth.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const role = getRole(); // Взема текущата роля
+
+    // Навигация според ролята
+    const nav = document.querySelector(".nav");
+    if(role === "user") {
+        nav.innerHTML = `
+            <a href="index.html">Начало</a>
+            <a href="games.html" class="active">Игри</a>
+            <a href="#" onclick="logout()">Изход</a>
+        `;
+    } else if(role === "admin") {
+        nav.innerHTML = `
+            <a href="index.html">Начало</a>
+            <a href="games.html" class="active">Игри</a>
+            <a href="admin.html">Админ панел</a>
+            <a href="#" onclick="logout()">Изход</a>
+        `;
+    } else {
+        // гост
+        nav.innerHTML = `
+            <a href="index.html">Начало</a>
+            <a href="games.html" class="active">Игри</a>
+            <a href="login.html">Вход</a>
+            <a href="register.html">Регистрация</a>
+        `;
+    }
+
+    // Контрол на бутоните за гост
+    if(role === "guest") {
+        const buttons = document.querySelectorAll(".game-card a.btn");
+        buttons.forEach(btn => {
+            btn.addEventListener("click", function(e) {
+                e.preventDefault();
+                alert("Само регистрирани потребители имат достъп до игрите. Моля, влезте или се регистрирайте.");
+            });
+        });
+    }
+});
+</script>
+
 <body>
 
 <header class="header">

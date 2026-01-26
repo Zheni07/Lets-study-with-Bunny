@@ -13,22 +13,19 @@
     <!-- JS -->
     <script defer src="js/main.js"></script>
 </head>
+
+<script src="js/auth.js"></script>
+
 <body>
 
 <header class="header">
     <div class="logo-area">
         <img src="assets/images/logo.png" alt="Лого Бъни" class="logo">
     </div>
-    <nav class="nav">
-        <a href="index.html" class="active">Начало</a>
-        <a href="games.html">Игри</a>
-        <a href="login.html">Вход</a>
-        <a href="register.html">Регистрация</a>
-    </nav>
+    <nav class="nav" id="nav"></nav>
 </header>
 
-<section class="bunny-banner">
-    <div class="background-animation">
+<div class="background-animation">
         <div class="bubble bubble1"></div>
         <div class="bubble bubble2"></div>
         <div class="bubble bubble3"></div>
@@ -40,7 +37,8 @@
         <div class="bubble bubble9"></div>
         <div class="bubble bubble10"></div>
     </div>
-
+    
+<section class="bunny-banner">
     <div class="white-card bunny-content-row">
     <!-- Лява колона: балонче + зайче -->
     <div class="bunny-left-column">
@@ -51,6 +49,39 @@
         <img src="assets/images/bunny.png" alt="Бъни" id="bunny">
 
         <audio id="bunny-audio" src="assets/audio/bunny.mp3" preload="auto"></audio>
+
+        <script src="js/auth.js"></script>
+<script>
+const role = getRole();
+const nav = document.getElementById("nav");
+
+if (role === "guest") {
+    nav.innerHTML = `
+        <a href="index.html" class="active">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="login.html">Вход</a>
+        <a href="register.html">Регистрация</a>
+    `;
+}
+
+if (role === "user") {
+    nav.innerHTML = `
+        <a href="index.html" class="active">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="#" onclick="logout()">Изход</a>
+    `;
+}
+
+if (role === "admin") {
+    nav.innerHTML = `
+        <a href="index.html" class="active">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="admin.html">Админ панел</a>
+        <a href="#" onclick="logout()">Изход</a>
+    `;
+}
+</script>
+
     </div>
 
     <!-- Дясна колона: текст + бутон -->

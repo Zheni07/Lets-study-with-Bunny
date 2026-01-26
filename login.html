@@ -12,21 +12,19 @@
     <div class="logo-area">
         <img src="assets/images/logo.png" alt="Лого Бъни" class="logo">
     </div>
-    <nav class="nav">
-        <a href="index.html">Начало</a>
-        <a href="games.html">Игри</a>
-        <a href="login.html" class="active">Вход</a>
-        <a href="register.html">Регистрация</a>
-    </nav>
+    <!-- Nav ще се зарежда според ролята -->
+    <nav class="nav" id="nav"></nav>
 </header>
 
 <section class="login-section">
     <div class="white-card form-card">
         <h2>Вход</h2>
-        <form>
+
+        <!-- Добавяме onsubmit -->
+        <form onsubmit="event.preventDefault(); fakeLogin();">
             <div class="form-group">
                 <label>Имейл</label>
-                <input type="email" placeholder="Въведи имейл" required>
+                <input type="email" id="email" placeholder="Въведи имейл" required>
             </div>
             <div class="form-group">
                 <label>Парола</label>
@@ -34,6 +32,7 @@
             </div>
             <button type="submit" class="btn">Вход</button>
         </form>
+
         <p>Нямаш акаунт? <a href="register.html">Регистрация</a></p>
     </div>
 </section>
@@ -41,6 +40,52 @@
 <footer>
     <p>© 2026 Да учим с Бъни</p>
 </footer>
+
+<!-- JS -->
+<script src="js/auth.js"></script>
+
+<script>
+/* Меню според ролята */
+const role = getRole();
+const nav = document.getElementById("nav");
+
+if (role === "guest") {
+    nav.innerHTML = `
+        <a href="index.html">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="login.html" class="active">Вход</a>
+        <a href="register.html">Регистрация</a>
+    `;
+}
+
+if (role === "user") {
+    nav.innerHTML = `
+        <a href="index.html">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="#" onclick="logout()">Изход</a>
+    `;
+}
+
+if (role === "admin") {
+    nav.innerHTML = `
+        <a href="index.html">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="admin.html">Админ панел</a>
+        <a href="#" onclick="logout()">Изход</a>
+    `;
+}
+
+/* Фалшив вход */
+function fakeLogin() {
+    const email = document.getElementById("email").value;
+
+    if (email === "admin@bunny.bg") {
+        login("admin");
+    } else {
+        login("user");
+    }
+}
+</script>
 
 </body>
 </html>
