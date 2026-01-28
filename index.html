@@ -43,7 +43,7 @@
     <!-- Лява колона: балонче + зайче -->
     <div class="bunny-left-column">
         <div class="speech-bubble" id="bunny-text">
-            <p>Здравей! Аз съм Бъни и тук ще се учим заедно! Натисни ме, за да си приказваме!</p>
+            <p>Здравей! Натисни ме, за да си приказваме!</p>
         </div>
 
         <img src="assets/images/bunny.png" alt="Бъни" id="bunny">
@@ -52,33 +52,43 @@
 
         <script src="js/auth.js"></script>
 <script>
-const role = getRole();
-const nav = document.getElementById("nav");
+// Проверява автентикация при зареждане на страницата
+(async function() {
+    const token = getToken();
+    if (token) {
+        // Проверява дали токена е валиден
+        await checkAuth();
+    }
+    
+    // Обновява навигацията според ролята
+    updateNavigation();
+})();
 
-if (role === "guest") {
-    nav.innerHTML = `
-        <a href="index.html" class="active">Начало</a>
-        <a href="games.html">Игри</a>
-        <a href="login.html">Вход</a>
-        <a href="register.html">Регистрация</a>
-    `;
-}
+function updateNavigation() {
+    const role = getRole();
+    const nav = document.getElementById("nav");
 
-if (role === "user") {
-    nav.innerHTML = `
-        <a href="index.html" class="active">Начало</a>
-        <a href="games.html">Игри</a>
-        <a href="#" onclick="logout()">Изход</a>
-    `;
-}
-
-if (role === "admin") {
-    nav.innerHTML = `
-        <a href="index.html" class="active">Начало</a>
-        <a href="games.html">Игри</a>
-        <a href="admin.html">Админ панел</a>
-        <a href="#" onclick="logout()">Изход</a>
-    `;
+    if (role === "guest") {
+        nav.innerHTML = `
+            <a href="index.html" class="active">Начало</a>
+            <a href="games.html">Игри</a>
+            <a href="login.html">Вход</a>
+            <a href="register.html">Регистрация</a>
+        `;
+    } else if (role === "user") {
+        nav.innerHTML = `
+            <a href="index.html" class="active">Начало</a>
+            <a href="games.html">Игри</a>
+            <a href="#" onclick="logout()">Изход</a>
+        `;
+    } else if (role === "admin") {
+        nav.innerHTML = `
+            <a href="index.html" class="active">Начало</a>
+            <a href="games.html">Игри</a>
+            <a href="admin.html">Админ панел</a>
+            <a href="#" onclick="logout()">Изход</a>
+        `;
+    }
 }
 </script>
 

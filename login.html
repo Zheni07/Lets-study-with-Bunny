@@ -21,16 +21,17 @@
         <h2>Вход</h2>
 
         <!-- Добавяме onsubmit -->
-        <form onsubmit="event.preventDefault(); fakeLogin();">
+        <form onsubmit="event.preventDefault(); loginUser();">
             <div class="form-group">
                 <label>Имейл</label>
                 <input type="email" id="email" placeholder="Въведи имейл" required>
             </div>
             <div class="form-group">
                 <label>Парола</label>
-                <input type="password" placeholder="Въведи парола" required>
+                <input type="password" id="password" placeholder="Въведи парола" required>
             </div>
             <button type="submit" class="btn">Вход</button>
+            <div id="login-message" style="margin-top: 10px;"></div>
         </form>
 
         <p>Нямаш акаунт? <a href="register.html">Регистрация</a></p>
@@ -75,14 +76,48 @@ if (role === "admin") {
     `;
 }
 
-/* Фалшив вход */
-function fakeLogin() {
+/* Вход чрез API */
+async function loginUser() {
     const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const messageDiv = document.getElementById("login-message");
 
-    if (email === "admin@bunny.bg") {
-        login("admin");
-    } else {
-        login("user");
+    messageDiv.textContent = "Влизане...";
+    messageDiv.style.color = "blue";
+
+    try {
+        const response = await fetch("http://localhost:4000/api/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error?.message || "Грешен имейл или парола");
+        }
+
+        // Успешен вход
+        messageDiv.textContent = "Успешен вход!";
+        messageDiv.style.color = "green";
+
+        // Запазване на токена и данните за потребителя
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("role", data.user.role);
+
+        // Пренасочване след 1 секунда
+        setTimeout(() => {
+            window.location.href = "index.html";
+        }, 1000);
+
+    } catch (error) {
+        console.error("Login error:", error);
+        messageDiv.textContent = "Грешка: " + error.message;
+        messageDiv.style.color = "red";
     }
 }
 </script>

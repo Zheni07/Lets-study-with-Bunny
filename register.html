@@ -24,7 +24,7 @@
         <form onsubmit="event.preventDefault(); registerUser();">
             <div class="form-group">
                 <label>Име</label>
-                <input type="text" placeholder="Въведи име" required>
+                <input type="text" id="username" placeholder="Въведи име" required>
             </div>
             <div class="form-group">
                 <label>Имейл</label>
@@ -32,9 +32,10 @@
             </div>
             <div class="form-group">
                 <label>Парола</label>
-                <input type="password" placeholder="Въведи парола" required>
+                <input type="password" id="password" placeholder="Въведи парола" required>
             </div>
             <button type="submit" class="btn">Регистрация</button>
+            <div id="register-message" style="margin-top: 10px;"></div>
         </form>
 
         <p>Вече имаш акаунт? <a href="login.html">Вход</a></p>
@@ -79,10 +80,77 @@ if (role === "admin") {
     `;
 }
 
-/* Фалшива регистрация */
-function registerUser() {
-    // Всеки регистриран става обикновен потребител
-    login("user");
+/* Регистрация чрез API */
+async function registerUser() {
+    const username = document.getElementById("username").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const messageDiv = document.getElementById("register-message");
+
+    messageDiv.textContent = "Регистриране...";
+    messageDiv.style.color = "blue";
+
+    try {
+        console.log("Sending registration request:", { username, email, password: "***" });
+        
+        const response = await fetch("http://localhost:4000/api/auth/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, email, password }),
+        });
+
+        console.log("Response status:", response.status);
+        console.log("Response headers:", response.headers);
+
+        let data;
+        try {
+            data = await response.json();
+            console.log("Response data:", data);
+        } catch (parseError) {
+            console.error("Failed to parse JSON:", parseError);
+            const text = await response.text();
+            console.error("Response text:", text);
+            throw new Error("Невалиден отговор от сървъра");
+        }
+
+        if (!response.ok) {
+            const errorMsg = data.error?.message || data.message || "Грешка при регистрация";
+            console.error("Registration failed:", errorMsg);
+            throw new Error(errorMsg);
+        }
+
+        // Успешна регистрация
+        console.log("Registration successful:", data);
+        messageDiv.textContent = "Успешна регистрация!";
+        messageDiv.style.color = "green";
+
+        // Запазване на токена и данните за потребителя
+        if (data.token) {
+            localStorage.setItem("token", data.token);
+        }
+        if (data.user) {
+            localStorage.setItem("user", JSON.stringify(data.user));
+            localStorage.setItem("role", data.user.role);
+        }
+
+        // Пренасочване след 1 секунда
+        setTimeout(() => {
+            window.location.href = "index.html";
+        }, 1000);
+
+    } catch (error) {
+        console.error("Registration error:", error);
+        
+        // Check if it's a network error
+        if (error.message === "Failed to fetch" || error.name === "TypeError") {
+            messageDiv.textContent = "Грешка: Не може да се свърже със сървъра. Проверете дали backend-ът работи на http://localhost:4000";
+        } else {
+            messageDiv.textContent = "Грешка: " + error.message;
+        }
+        messageDiv.style.color = "red";
+    }
 }
 </script>
 

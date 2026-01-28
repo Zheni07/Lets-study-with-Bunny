@@ -1,0 +1,26 @@
+{
+  "name": "learn-with-bunny-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Learn with Bunny (3-layer architecture + RBAC)",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test:db": "node test-database.js",
+    "test:register": "node test-registration.js",
+    "test:save": "node test-save-user.js",
+    "diagnose": "node diagnose-db.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
