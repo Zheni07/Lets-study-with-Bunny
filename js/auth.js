@@ -1,5 +1,8 @@
-// API Base URL
-const API_BASE = "http://localhost:4000/api";
+// API Base URL – same host as the page, port 4000 (works for 127.0.0.1 and IP like 172.20.10.11)
+function getApiBase() {
+    return window.location.protocol + "//" + window.location.hostname + ":4000/api";
+}
+const API_BASE = getApiBase();
 
 // Връща текущата роля
 function getRole() {

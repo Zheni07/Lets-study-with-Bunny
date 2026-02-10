@@ -1,34 +1,389 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
-<meta charset="UTF-8">
-<title>Админ панел</title>
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Админ панел - Да учим с Бъни</title>
+    <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="stylesheet" href="css/style.css?v=4">
+    <style>
+        .admin-section { margin: 2rem 0; }
+        .admin-section h2 { margin-bottom: 1rem; border-bottom: 2px solid #4a90a4; padding-bottom: 0.5rem; }
+        .profiles-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .profiles-table th, .profiles-table td { border: 1px solid #ddd; padding: 0.5rem 0.75rem; text-align: left; }
+        .profiles-table th { background: #4a90a4; color: #fff; }
+        .profiles-table tr:nth-child(even) { background: #f9f9f9; }
+        .btn-small { padding: 0.25rem 0.5rem; font-size: 0.85rem; margin: 0 0.25rem; }
+        .btn-danger { background: #c44; color: #fff; border: none; cursor: pointer; }
+        .btn-danger:hover { background: #a33; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; max-width: 500px; padding: 0.5rem; }
+        .form-group textarea { min-height: 100px; }
+        .message { margin-top: 1rem; padding: 0.5rem; border-radius: 4px; }
+        .message.success { background: #cfc; color: #363; }
+        .message.error { background: #fcc; color: #633; }
+        .nav-links { margin-bottom: 1.5rem; }
+        .nav-links a { margin-right: 1rem; }
+        .articles-list { list-style: none; padding: 0; }
+        .articles-list li { border: 1px solid #ddd; padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+    </style>
 </head>
 <body>
 
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=4"></script>
 <script>
-if (getRole() !== "admin") {
-    alert("Нямаш достъп!");
-    window.location.href = "index.html";
-}
+    (async function() {
+        const token = getToken();
+        if (!token) {
+            alert("Трябва да сте влезли.");
+            window.location.href = "login.html";
+            return;
+        }
+        const user = await checkAuth();
+        if (!user || user.role !== "admin") {
+            alert("Нямате достъп до админ панела.");
+            window.location.href = "index.html";
+            return;
+        }
+    })();
 </script>
 
 <header class="header">
     <div class="logo-area">
-        <img src="assets/images/logo.png" class="logo">
+        <img src="assets/images/logo.png" alt="Лого" class="logo">
     </div>
+    <nav class="nav">
+        <a href="index.html">Начало</a>
+        <a href="games.html">Игри</a>
+        <a href="admin.html?v=2" class="active">Админ панел</a>
+        <a href="#" onclick="logout(); return false;">Изход</a>
+    </nav>
 </header>
 
-<section class="white-card form-card">
-    <h2>Добавяне на статия</h2>
-    <form>
-        <input type="text" placeholder="Заглавие">
-        <textarea placeholder="Текст"></textarea>
-        <button class="btn">Публикувай</button>
-    </form>
-</section>
+<main class="white-card" style="max-width: 900px; margin: 2rem auto; padding: 2rem;">
+    <h1>Админ панел</h1>
+    <p>Като администратор можете да преглеждате всички потребители и да публикувате статии.</p>
+    <p style="font-size: 0.85rem; color: #888;">Версия с потребители и статии — ако виждате този текст, страницата е обновена.</p>
+
+    <!-- View all user profiles -->
+    <section class="admin-section">
+        <h2>Всички потребители</h2>
+        <div id="profiles-loading">Зареждане...</div>
+        <div id="profiles-error" class="message error" style="display: none;"></div>
+        <table class="profiles-table" id="profiles-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Потребителско име</th>
+                    <th>Имейл</th>
+                    <th>Роля</th>
+                    <th>Регистрация</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="profiles-tbody"></tbody>
+        </table>
+    </section>
+
+    <!-- Publish new article -->
+    <section class="admin-section">
+        <h2>Публикуване на нова статия</h2>
+        <form id="article-form" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="article-title">Заглавие *</label>
+                <input type="text" id="article-title" name="title" placeholder="Заглавие на статията" required>
+            </div>
+            <div class="form-group">
+                <label for="article-short">Кратко описание *</label>
+                <input type="text" id="article-short" name="shortDescription" placeholder="Кратко описание" required>
+            </div>
+            <div class="form-group">
+                <label for="article-content">Пълен текст *</label>
+                <textarea id="article-content" name="content" placeholder="Съдържание на статията" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="article-date">Дата (по избор)</label>
+                <input type="date" id="article-date" name="date">
+                <small style="color: #666;">Ако не изберете, ще се използва днешната дата.</small>
+            </div>
+            <div class="form-group">
+                <label for="article-image">Снимка (по избор)</label>
+                <input type="file" id="article-image" name="image" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+            </div>
+            <button type="submit" class="btn">Публикувай статия</button>
+        </form>
+        <div id="article-message" class="message" style="display: none;"></div>
+    </section>
+
+    <!-- List of articles (admin overview) with Edit / Delete -->
+    <section class="admin-section">
+        <h2>Публикувани статии</h2>
+        <div id="articles-loading">Зареждане...</div>
+        <ul class="articles-list" id="articles-list" style="display: none;"></ul>
+    </section>
+
+    <!-- Edit article form (shown when Edit is clicked) -->
+    <section class="admin-section" id="edit-article-section" style="display: none;">
+        <h2>Редактиране на статия</h2>
+        <form id="edit-article-form" enctype="multipart/form-data">
+            <input type="hidden" id="edit-article-id" name="id">
+            <div class="form-group">
+                <label for="edit-article-title">Заглавие *</label>
+                <input type="text" id="edit-article-title" name="title" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-article-short">Кратко описание *</label>
+                <input type="text" id="edit-article-short" name="shortDescription" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-article-content">Пълен текст *</label>
+                <textarea id="edit-article-content" name="content" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="edit-article-image">Нова снимка (по избор)</label>
+                <input type="file" id="edit-article-image" name="image" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+            </div>
+            <button type="submit" class="btn">Запази промените</button>
+            <button type="button" class="btn btn-small" onclick="cancelEditArticle()">Отказ</button>
+        </form>
+        <div id="edit-article-message" class="message" style="display: none;"></div>
+    </section>
+</main>
+
+<footer>
+    <p>© 2026 Да учим с Бъни</p>
+</footer>
+
+<script>
+    var apiBase = (typeof getApiBase === "function" ? getApiBase() : (window.location.protocol + "//" + window.location.hostname + ":4000/api"));
+
+    function authHeaders() {
+        var token = getToken();
+        if (!token) return {};
+        return { "Authorization": "Bearer " + token };
+    }
+
+    // Load and display all user profiles
+    async function loadProfiles() {
+        var loading = document.getElementById("profiles-loading");
+        var errorDiv = document.getElementById("profiles-error");
+        var table = document.getElementById("profiles-table");
+        var tbody = document.getElementById("profiles-tbody");
+
+        loading.style.display = "block";
+        errorDiv.style.display = "none";
+        table.style.display = "none";
+
+        try {
+            var response = await fetch(apiBase + "/admin/users", {
+                headers: authHeaders(),
+            });
+            var data = await response.json().catch(function() { return {}; });
+
+            loading.style.display = "none";
+            table.style.display = "table";
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    tbody.innerHTML = "<tr><td colspan='6' class='message error'>Нямате право да виждате потребителите. Влезте като администратор.</td></tr>";
+                } else {
+                    tbody.innerHTML = "<tr><td colspan='6' class='message error'>Грешка: " + (data.error && data.error.message ? data.error.message : "Грешка при зареждане") + "</td></tr>";
+                }
+                return;
+            }
+
+            if (!data.users || data.users.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='6'>Няма потребители</td></tr>";
+            } else {
+                tbody.innerHTML = data.users.map(function(u) {
+                    var createdAt = u.createdAt ? new Date(u.createdAt).toLocaleDateString("bg-BG") : "-";
+                    var currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+                    var isSelf = u.id === currentUser.id;
+                    var actions = isSelf
+                        ? "<span>—</span>"
+                        : "<button type='button' class='btn btn-small btn-danger' onclick='deleteUser(" + u.id + ")'>Изтрий</button>";
+                    return "<tr><td>" + u.id + "</td><td>" + (u.username || "") + "</td><td>" + (u.email || "") + "</td><td>" + (u.role || "") + "</td><td>" + createdAt + "</td><td>" + actions + "</td></tr>";
+                }).join("");
+            }
+        } catch (err) {
+            loading.style.display = "none";
+            table.style.display = "table";
+            tbody.innerHTML = "<tr><td colspan='6' class='message error'>Грешка: " + err.message + " (проверете дали backend работи на " + window.location.hostname + ":4000)</td></tr>";
+        }
+    }
+
+    async function deleteUser(id) {
+        if (!confirm("Сигурни ли сте, че искате да изтриете този потребител?")) return;
+        try {
+            var response = await fetch(apiBase + "/admin/users/" + id, {
+                method: "DELETE",
+                headers: authHeaders(),
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.error?.message || "Грешка при изтриване");
+            }
+            loadProfiles();
+        } catch (err) {
+            alert("Грешка: " + err.message);
+        }
+    }
+
+    // Publish new article
+    document.getElementById("article-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const msgEl = document.getElementById("article-message");
+        msgEl.style.display = "none";
+
+        const form = e.target;
+        const formData = new FormData();
+        formData.append("title", document.getElementById("article-title").value.trim());
+        formData.append("shortDescription", document.getElementById("article-short").value.trim());
+        formData.append("content", document.getElementById("article-content").value.trim());
+        const fileInput = document.getElementById("article-image");
+        if (fileInput.files && fileInput.files[0]) {
+            formData.append("image", fileInput.files[0]);
+        }
+
+        try {
+            var response = await fetch(apiBase + "/articles", {
+                method: "POST",
+                headers: authHeaders(),
+                body: formData,
+            });
+
+            const data = await response.json().catch(function() { return {}; });
+
+            if (!response.ok) {
+                throw new Error(data.error?.message || "Грешка при публикуване");
+            }
+
+            msgEl.className = "message success";
+            msgEl.textContent = "Статията е публикувана успешно.";
+            msgEl.style.display = "block";
+            form.reset();
+            loadArticles();
+        } catch (err) {
+            msgEl.className = "message error";
+            msgEl.textContent = "Грешка: " + err.message;
+            msgEl.style.display = "block";
+        }
+    });
+
+    // Load articles list (with Edit / Delete for admin)
+    async function loadArticles() {
+        var loading = document.getElementById("articles-loading");
+        var list = document.getElementById("articles-list");
+        try {
+            var response = await fetch(apiBase + "/articles");
+            var data = await response.json();
+            loading.style.display = "none";
+            if (data.articles && data.articles.length > 0) {
+                list.innerHTML = data.articles.map(function(a) {
+                    var date = a.createdAt ? new Date(a.createdAt).toLocaleDateString("bg-BG") : "";
+                    return "<li><span><strong>" + (a.title || "") + "</strong> — " + date + "</span>" +
+                        "<span><button type='button' class='btn btn-small' onclick='editArticle(" + a.id + ")'>Редактирай</button> " +
+                        "<button type='button' class='btn btn-small btn-danger' onclick='deleteArticle(" + a.id + ")'>Изтрий</button></span></li>";
+                }).join("");
+            } else {
+                list.innerHTML = "<li>Няма публикувани статии</li>";
+            }
+            list.style.display = "block";
+        } catch (err) {
+            loading.textContent = "Грешка при зареждане.";
+        }
+    }
+
+    async function editArticle(id) {
+        var section = document.getElementById("edit-article-section");
+        var msgEl = document.getElementById("edit-article-message");
+        msgEl.style.display = "none";
+        try {
+            var response = await fetch(apiBase + "/articles/" + id);
+            var data = await response.json();
+            if (!response.ok || !data.article) {
+                msgEl.className = "message error";
+                msgEl.textContent = "Грешка при зареждане на статията.";
+                msgEl.style.display = "block";
+                return;
+            }
+            var a = data.article;
+            document.getElementById("edit-article-id").value = a.id;
+            document.getElementById("edit-article-title").value = a.title || "";
+            document.getElementById("edit-article-short").value = a.shortDescription || "";
+            document.getElementById("edit-article-content").value = a.content || "";
+            document.getElementById("edit-article-image").value = "";
+            section.style.display = "block";
+            section.scrollIntoView({ behavior: "smooth" });
+        } catch (err) {
+            msgEl.className = "message error";
+            msgEl.textContent = "Грешка: " + err.message;
+            msgEl.style.display = "block";
+        }
+    }
+
+    function cancelEditArticle() {
+        document.getElementById("edit-article-section").style.display = "none";
+        document.getElementById("edit-article-message").style.display = "none";
+    }
+
+    document.getElementById("edit-article-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        var id = document.getElementById("edit-article-id").value;
+        var msgEl = document.getElementById("edit-article-message");
+        msgEl.style.display = "none";
+        var formData = new FormData();
+        formData.append("title", document.getElementById("edit-article-title").value.trim());
+        formData.append("shortDescription", document.getElementById("edit-article-short").value.trim());
+        formData.append("content", document.getElementById("edit-article-content").value.trim());
+        var fileInput = document.getElementById("edit-article-image");
+        if (fileInput.files && fileInput.files[0]) formData.append("image", fileInput.files[0]);
+        try {
+            var response = await fetch(apiBase + "/articles/" + id, {
+                method: "PUT",
+                headers: authHeaders(),
+                body: formData,
+            });
+            var data = await response.json().catch(function() { return {}; });
+            if (!response.ok) {
+                throw new Error(data.error && data.error.message ? data.error.message : "Грешка при запазване");
+            }
+            msgEl.className = "message success";
+            msgEl.textContent = "Статията е запазена.";
+            msgEl.style.display = "block";
+            cancelEditArticle();
+            loadArticles();
+        } catch (err) {
+            msgEl.className = "message error";
+            msgEl.textContent = "Грешка: " + err.message;
+            msgEl.style.display = "block";
+        }
+    });
+
+    async function deleteArticle(id) {
+        if (!confirm("Сигурни ли сте, че искате да изтриете тази статия?")) return;
+        try {
+            var response = await fetch(apiBase + "/articles/" + id, {
+                method: "DELETE",
+                headers: authHeaders(),
+            });
+            if (!response.ok) {
+                var data = await response.json().catch(function() { return {}; });
+                throw new Error(data.error && data.error.message ? data.error.message : "Грешка при изтриване");
+            }
+            loadArticles();
+        } catch (err) {
+            alert("Грешка: " + err.message);
+        }
+    }
+
+    loadProfiles();
+    loadArticles();
+</script>
 
 </body>
 </html>

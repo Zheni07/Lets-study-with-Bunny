@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <title>Регистрация - Да учим с Бъни</title>
     <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
 
@@ -47,9 +48,10 @@
 </footer>
 
 <!-- JS -->
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=4"></script>
 
 <script>
+var apiBase = (typeof getApiBase === "function" ? getApiBase() : (window.location.protocol + "//" + window.location.hostname + ":4000/api"));
 /* Меню според ролята */
 const role = getRole();
 const nav = document.getElementById("nav");
@@ -93,7 +95,7 @@ async function registerUser() {
     try {
         console.log("Sending registration request:", { username, email, password: "***" });
         
-        const response = await fetch("http://localhost:4000/api/auth/register", {
+        const response = await fetch(apiBase + "/auth/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -145,7 +147,7 @@ async function registerUser() {
         
         // Check if it's a network error
         if (error.message === "Failed to fetch" || error.name === "TypeError") {
-            messageDiv.textContent = "Грешка: Не може да се свърже със сървъра. Проверете дали backend-ът работи на http://localhost:4000";
+            messageDiv.textContent = "Грешка: Не може да се свърже със сървъра. Проверете дали backend-ът работи на " + (window.location.protocol + "//" + window.location.hostname + ":4000");
         } else {
             messageDiv.textContent = "Грешка: " + error.message;
         }

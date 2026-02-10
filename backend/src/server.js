@@ -19,9 +19,9 @@ async function main() {
     initDb();
 
     const app = createApp();
-    app.listen(env.PORT, () => {
+    app.listen(env.PORT, "0.0.0.0", () => {
       // eslint-disable-next-line no-console
-      console.log(`✓ API listening on http://localhost:${env.PORT}`);
+      console.log(`✓ API listening on http://localhost:${env.PORT} and on your network (use same host as frontend, port ${env.PORT})`);
       // eslint-disable-next-line no-console
       console.log(`✓ Database location: ${path.resolve(dataDir, env.DB_PATH.replace("./data/", ""))}`);
     });

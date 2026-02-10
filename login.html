@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <title>Вход - Да учим с Бъни</title>
     <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
 
@@ -43,9 +44,10 @@
 </footer>
 
 <!-- JS -->
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=4"></script>
 
 <script>
+var apiBase = (typeof getApiBase === "function" ? getApiBase() : (window.location.protocol + "//" + window.location.hostname + ":4000/api"));
 /* Меню според ролята */
 const role = getRole();
 const nav = document.getElementById("nav");
@@ -86,7 +88,7 @@ async function loginUser() {
     messageDiv.style.color = "blue";
 
     try {
-        const response = await fetch("http://localhost:4000/api/auth/login", {
+        const response = await fetch(apiBase + "/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

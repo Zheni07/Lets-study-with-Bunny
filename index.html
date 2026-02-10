@@ -2,19 +2,22 @@
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Да учим с Бъни</title>
 
     <!-- Шрифт -->
     <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/style.css">
+    <!-- CSS (v=4 so 127.0.0.1 and 172.20.10.11 load the same) -->
+    <link rel="stylesheet" href="css/style.css?v=4">
 
     <!-- JS -->
-    <script defer src="js/main.js"></script>
+    <script defer src="js/main.js?v=4"></script>
 </head>
 
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=4"></script>
 
 <body>
 
@@ -48,9 +51,9 @@
 
         <img src="assets/images/bunny.png" alt="Бъни" id="bunny">
 
-        <audio id="bunny-audio" src="assets/audio/bunny.mp3" preload="auto"></audio>
+        <audio id="bunny-audio" src="assets/audio/welcomeBunny.wav" preload="auto"></audio>
 
-        <script src="js/auth.js"></script>
+        <script src="js/auth.js?v=4"></script>
 <script>
 // Проверява автентикация при зареждане на страницата
 (async function() {
@@ -85,7 +88,7 @@ function updateNavigation() {
         nav.innerHTML = `
             <a href="index.html" class="active">Начало</a>
             <a href="games.html">Игри</a>
-            <a href="admin.html">Админ панел</a>
+            <a href="admin.html?v=2">Админ панел</a>
             <a href="#" onclick="logout()">Изход</a>
         `;
     }
@@ -109,24 +112,15 @@ function updateNavigation() {
 <section class="articles">
     <div class="white-card">
         <h2>Полезни статии за родители и учители</h2>
-        <div class="articles-container">
-            <div class="article-card">
-                <h3>Какво е дислексия?</h3>
-                <p>Кратко обяснение за дислексията и как да помогнем на децата.</p>
-                <button class="btn read-more">Прочети повече</button>
-            </div>
-
-            <div class="article-card">
-                <h3>Игри за развитие на четенето</h3>
-                <p>Идеи за упражнения и забавни игри.</p>
-                <button class="btn read-more">Прочети повече</button>
-            </div>
-
-            <div class="article-card">
-                <h3>Как да подкрепим детето у дома</h3>
-                <p>Съвети за родителите.</p>
-                <button class="btn read-more">Прочети повече</button>
-            </div>
+        <div class="articles-carousel-outer" id="articles-carousel-outer" style="display: none;">
+            <button type="button" class="articles-arrow articles-arrow-left" id="articles-arrow-left" aria-label="Предишни статии">‹</button>
+            <div class="articles-carousel-inner" id="articles-carousel-inner"></div>
+            <button type="button" class="articles-arrow articles-arrow-right" id="articles-arrow-right" aria-label="Следващи статии">›</button>
+            <div class="articles-dots" id="articles-dots" aria-hidden="true"></div>
+        </div>
+        <div class="articles-container" id="articles-container">
+            <p id="articles-loading">Зареждане на статии...</p>
+            <p id="articles-empty" style="display: none;">Няма публикувани статии.</p>
         </div>
     </div>
 </section>
@@ -134,19 +128,26 @@ function updateNavigation() {
 <section class="contact">
     <div class="white-card">
         <h2>Свържи се с нас</h2>
-        <form>
+
+        <form id="contact-form">
             <div class="form-group">
                 <label>Име</label>
-                <input type="text" placeholder="Твоето име" required>
+                <input type="text" name="name" placeholder="Твоето име" required>
             </div>
+
             <div class="form-group">
                 <label>Имейл</label>
-                <input type="email" placeholder="Имейл" required>
+                <input type="email" name="email" placeholder="Имейл" required>
             </div>
+
             <div class="form-group">
                 <label>Съобщение</label>
-                <textarea placeholder="Твоето съобщение" required></textarea>
+                <textarea name="message" placeholder="Твоето съобщение" required></textarea>
             </div>
+
+            <!-- honeypot anti-spam -->
+            <input type="text" name="company" style="display:none">
+
             <button type="submit" class="btn">Изпрати</button>
         </form>
     </div>
@@ -155,6 +156,175 @@ function updateNavigation() {
 <footer>
     <p>© 2026 Да учим с Бъни</p>
 </footer>
+
+<script>
+(function() {
+    var api = (typeof getApiBase === "function" ? getApiBase() : (window.location.protocol + "//" + window.location.hostname + ":4000/api"));
+    var container = document.getElementById("articles-container");
+    var carouselOuter = document.getElementById("articles-carousel-outer");
+    var carouselInner = document.getElementById("articles-carousel-inner");
+    var arrowLeft = document.getElementById("articles-arrow-left");
+    var arrowRight = document.getElementById("articles-arrow-right");
+    var dotsContainer = document.getElementById("articles-dots");
+    var loading = document.getElementById("articles-loading");
+    var empty = document.getElementById("articles-empty");
+    var articlesData = [];
+    var currentPage = 0;
+    var cardsPerPage = 3;
+
+    function renderCard(a) {
+        var date = a.createdAt ? new Date(a.createdAt).toLocaleDateString("bg-BG") : "";
+        return "<h3>" + (a.title || "") + "</h3><p>" + (a.shortDescription || "") + "</p>" + (date ? "<small>" + date + "</small>" : "") + '<a href="article.html?id=' + a.id + '" class="btn read-more">Прочети повече</a>';
+    }
+
+    function updateCarouselPosition() {
+        var outerWidth = carouselOuter ? carouselOuter.offsetWidth : 0;
+        if (carouselInner && outerWidth) {
+            carouselInner.style.transform = "translateX(-" + (currentPage * outerWidth) + "px)";
+        }
+        if (arrowLeft) {
+            arrowLeft.style.visibility = currentPage === 0 ? "hidden" : "visible";
+            arrowLeft.setAttribute("aria-disabled", currentPage === 0 ? "true" : "false");
+        }
+        if (arrowRight) {
+            var mp = maxPage();
+            arrowRight.style.visibility = currentPage >= mp ? "hidden" : "visible";
+            arrowRight.setAttribute("aria-disabled", currentPage >= mp ? "true" : "false");
+        }
+        if (dotsContainer) {
+            var dots = dotsContainer.querySelectorAll(".articles-dot");
+            dots.forEach(function(dot, i) {
+                dot.classList.toggle("is-active", i === currentPage);
+                dot.setAttribute("aria-current", i === currentPage ? "true" : "false");
+            });
+        }
+    }
+
+    function maxPage() {
+        return Math.max(0, Math.ceil((articlesData.length || 0) / cardsPerPage) - 1);
+    }
+
+    function buildCarousel(articles) {
+        articlesData = articles;
+        carouselInner.innerHTML = "";
+        articles.forEach(function(a) {
+            var card = document.createElement("div");
+            card.className = "article-card article-card-carousel";
+            card.innerHTML = renderCard(a);
+            carouselInner.appendChild(card);
+        });
+        currentPage = 0;
+        carouselInner.style.width = ((articles.length / cardsPerPage) * 100) + "%";
+        var cards = carouselInner.querySelectorAll(".article-card-carousel");
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].style.flex = "0 0 " + (100 / articles.length) + "%";
+        }
+        var numPages = maxPage() + 1;
+        dotsContainer.innerHTML = "";
+        for (var p = 0; p < numPages; p++) {
+            var dot = document.createElement("button");
+            dot.type = "button";
+            dot.className = "articles-dot" + (p === 0 ? " is-active" : "");
+            dot.setAttribute("aria-label", "Страница " + (p + 1) + " от " + numPages);
+            dot.setAttribute("aria-current", p === 0 ? "true" : "false");
+            (function(page) {
+                dot.addEventListener("click", function() {
+                    currentPage = page;
+                    updateCarouselPosition();
+                });
+            })(p);
+            dotsContainer.appendChild(dot);
+        }
+        updateCarouselPosition();
+    }
+
+    fetch(api + "/articles", { method: "GET", credentials: "omit" })
+        .then(function(r) {
+            if (!r.ok) throw new Error("API " + r.status);
+            return r.json();
+        })
+        .then(function(data) {
+            loading.style.display = "none";
+            if (!data || !Array.isArray(data.articles)) {
+                empty.textContent = "Грешка при зареждане на статии. (Невалиден отговор от API)";
+                empty.style.display = "block";
+                return;
+            }
+            if (data.articles.length === 0) {
+                empty.style.display = "block";
+                return;
+            }
+            var list = data.articles;
+            if (list.length > cardsPerPage) {
+                container.style.display = "none";
+                carouselOuter.style.display = "block";
+                buildCarousel(list);
+                arrowLeft.onclick = function() {
+                    if (currentPage > 0) {
+                        currentPage--;
+                        updateCarouselPosition();
+                    }
+                };
+                arrowRight.onclick = function() {
+                    if (currentPage < maxPage()) {
+                        currentPage++;
+                        updateCarouselPosition();
+                    }
+                };
+                window.addEventListener("resize", updateCarouselPosition);
+            } else {
+                list.forEach(function(a) {
+                    var card = document.createElement("div");
+                    card.className = "article-card";
+                    card.innerHTML = renderCard(a);
+                    container.appendChild(card);
+                });
+            }
+        })
+        .catch(function(err) {
+            loading.style.display = "none";
+            var host = window.location.hostname;
+            empty.textContent = "Грешка при зареждане на статии. Уверете се, че backend работи на " + host + ":4000 (същият хост като тази страница).";
+            empty.style.display = "block";
+        });
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+<!-- 2️⃣ Инициализация на EmailJS -->
+<script>
+(function () {
+    emailjs.init("oj1LyYs-QHqc7enhg"); // 🔴 Замени с твоя публичен ключ от EmailJS
+})();
+</script>
+
+<!-- 3️⃣ Логика за контактната форма -->
+<script>
+const contactForm = document.getElementById("contact-form");
+
+contactForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    // honeypot anti-spam
+    if (contactForm.company.value) return;
+
+    emailjs.sendForm(
+        "service_c88d2do",   // 🔴 Замени с твоя service ID
+        "template_fuagn0a",  // 🔴 Замени с твоя template ID
+        contactForm
+    ).then(
+        function () {
+            alert("Съобщението е изпратено успешно!");
+            contactForm.reset();
+        },
+        function (error) {
+            console.error("EmailJS error:", error);
+            alert("Грешка при изпращане. Опитайте отново.");
+        }
+    );
+});
+</script>
 
 </body>
 </html>

@@ -46,22 +46,14 @@ $backendJob = Start-Job -ScriptBlock {
 # Wait a moment for backend to start
 Start-Sleep -Seconds 3
 
-# Check if http-server is installed globally
-$httpServerInstalled = Get-Command http-server -ErrorAction SilentlyContinue
-
-if (-not $httpServerInstalled) {
-    Write-Host "Installing http-server for frontend..." -ForegroundColor Yellow
-    npm install -g http-server
-}
-
-# Start frontend server
-Write-Host "Starting frontend server (port 3000)..." -ForegroundColor Cyan
+# Start frontend server (Node script binds to 0.0.0.0 so 127.0.0.1 and network IP show the same)
+Write-Host "Starting frontend server (port 3000 on all interfaces)..." -ForegroundColor Cyan
 Set-Location $projectRoot
 $frontendJob = Start-Job -ScriptBlock {
     param($dir)
     Set-Location $dir
     $env:PATH += ";C:\Program Files\nodejs"
-    & "C:\Program Files\nodejs\node.exe" "C:\Program Files\nodejs\node_modules\http-server\bin\http-server" -p 3000
+    & node serve-frontend.js
 } -ArgumentList $projectRoot
 
 # Wait for servers to start
@@ -70,8 +62,8 @@ Start-Sleep -Seconds 2
 Write-Host ""
 Write-Host "✓ Servers started!" -ForegroundColor Green
 Write-Host ""
-Write-Host "Backend API:  http://localhost:4000" -ForegroundColor Cyan
-Write-Host "Frontend:     http://localhost:3000" -ForegroundColor Cyan
+Write-Host "Backend API:  http://localhost:4000 (also on network IP:4000)" -ForegroundColor Cyan
+Write-Host "Frontend:     http://localhost:3000 (also http://YOUR_IP:3000, e.g. 172.20.10.11:3000)" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Opening browser..." -ForegroundColor Yellow
 

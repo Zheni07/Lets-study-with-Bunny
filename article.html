@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <title>Статия - Да учим с Бъни</title>
+    <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link rel="stylesheet" href="css/style.css?v=4">
+</head>
+<body>
+
+<script src="js/auth.js?v=4"></script>
+
+<header class="header">
+    <div class="logo-area">
+        <img src="assets/images/logo.png" alt="Лого" class="logo">
+    </div>
+    <nav class="nav" id="nav"></nav>
+</header>
+
+<main class="white-card" style="max-width: 800px; margin: 2rem auto; padding: 2rem;">
+    <div id="article-loading">Зареждане...</div>
+    <div id="article-error" class="message error" style="display: none;"></div>
+    <article id="article-content" style="display: none;">
+        <h1 id="article-title"></h1>
+        <p class="article-meta" id="article-meta"></p>
+        <p id="article-short" style="font-weight: bold; color: #444;"></p>
+        <div id="article-body" class="article-body"></div>
+    </article>
+</main>
+
+<footer>
+    <p>© 2026 Да учим с Бъни</p>
+</footer>
+
+<script>
+(function() {
+    var api = (typeof getApiBase === "function" ? getApiBase() : (window.location.protocol + "//" + window.location.hostname + ":4000/api"));
+    var baseUrl = (window.location.protocol + "//" + window.location.hostname + ":4000");
+    var params = new URLSearchParams(window.location.search);
+    var id = params.get("id");
+    var loading = document.getElementById("article-loading");
+    var error = document.getElementById("article-error");
+    var content = document.getElementById("article-content");
+
+    function setNav() {
+        var role = getRole();
+        var nav = document.getElementById("nav");
+        if (role === "guest") {
+            nav.innerHTML = '<a href="index.html">Начало</a><a href="games.html">Игри</a><a href="login.html">Вход</a><a href="register.html">Регистрация</a>';
+        } else if (role === "user") {
+            nav.innerHTML = '<a href="index.html">Начало</a><a href="games.html">Игри</a><a href="#" onclick="logout()">Изход</a>';
+        } else if (role === "admin") {
+            nav.innerHTML = '<a href="index.html">Начало</a><a href="games.html">Игри</a><a href="admin.html?v=2">Админ панел</a><a href="#" onclick="logout()">Изход</a>';
+        }
+    }
+    setNav();
+
+    if (!id) {
+        loading.style.display = "none";
+        error.textContent = "Няма избрана статия.";
+        error.style.display = "block";
+        return;
+    }
+
+    fetch(api + "/articles/" + id, { method: "GET", credentials: "omit" })
+        .then(function(r) {
+            if (!r.ok) throw new Error("API " + r.status);
+            return r.json();
+        })
+        .then(function(data) {
+            loading.style.display = "none";
+            if (data.error || !data.article) {
+                error.textContent = data.error && data.error.message ? data.error.message : "Статията не е намерена.";
+                error.style.display = "block";
+                return;
+            }
+            var a = data.article;
+            document.getElementById("article-title").textContent = a.title || "";
+            document.getElementById("article-short").textContent = a.shortDescription || "";
+            var date = a.createdAt ? new Date(a.createdAt).toLocaleDateString("bg-BG") : "";
+            document.getElementById("article-meta").textContent = date + (a.author ? " — " + a.author : "");
+            var body = document.getElementById("article-body");
+            if (a.image) {
+                var img = document.createElement("img");
+                img.src = a.image.indexOf("http") === 0 ? a.image : baseUrl + (a.image.indexOf("/") === 0 ? "" : "/") + a.image;
+                img.alt = a.title || "";
+                body.appendChild(img);
+            }
+            var p = document.createElement("div");
+            p.innerHTML = (a.content || "").replace(/\n/g, "<br>");
+            body.appendChild(p);
+            content.style.display = "block";
+            document.title = (a.title || "Статия") + " - Да учим с Бъни";
+        })
+        .catch(function() {
+            loading.style.display = "none";
+            var host = window.location.hostname;
+            error.textContent = "Грешка при зареждане. Уверете се, че backend работи на " + host + ":4000 (същият хост като страницата).";
+            error.style.display = "block";
+        });
+})();
+</script>
+
+</body>
+</html>
