@@ -74,6 +74,11 @@ router.put(
       if (req.file) {
         imagePath = `/uploads/${req.file.filename}`;
       }
+      const removeImage =
+        req.body && (req.body.removeImage === "true" || req.body.removeImage === "1");
+      if (!req.file && removeImage) {
+        imagePath = null;
+      }
 
       const article = articleService.updateExistingArticle(Number(req.params.id), {
         title,

@@ -39,4 +39,26 @@ router.get("/me", requireAuth, async (req, res, next) => {
   }
 });
 
+// POST /api/auth/forgot-password
+router.post("/forgot-password", async (req, res, next) => {
+  try {
+    const { email, frontendBaseUrl } = req.body || {};
+    const result = await authService.requestPasswordReset({ email, frontendBaseUrl });
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/auth/reset-password
+router.post("/reset-password", async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body || {};
+    const result = await authService.resetPassword({ token, newPassword });
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

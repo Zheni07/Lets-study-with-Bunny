@@ -109,7 +109,7 @@ function updateNavigation() {
 
 </section>
 
-<section class="articles">
+<section class="articles" id="articles">
     <div class="white-card">
         <h2>Полезни статии за родители и учители</h2>
         <div class="articles-carousel-outer" id="articles-carousel-outer" style="display: none;">
@@ -125,7 +125,7 @@ function updateNavigation() {
     </div>
 </section>
 
-<section class="contact">
+<section class="contact" id="contact">
     <div class="white-card">
         <h2>Свържи се с нас</h2>
 
@@ -154,7 +154,47 @@ function updateNavigation() {
 </section>
 
 <footer>
-    <p>© 2026 Да учим с Бъни</p>
+    <div class="footer-inner">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="footer-title">Да учим с Бъни</div>
+                <div class="footer-desc">
+                    Игри и полезни материали за подкрепа на деца с трудности при четене и писане.
+                </div>
+                <div class="footer-badges">
+                    <span class="footer-badge">Дислексия • подкрепа</span>
+                    <span class="footer-badge">Игри • обучение</span>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Бързи връзки</h4>
+                <ul class="footer-links">
+                    <li><a href="index.html">Начало</a></li>
+                    <li><a href="games.html">Игри</a></li>
+                    <li><a href="index.html#articles">Статии</a></li>
+                    <li><a href="index.html#contact">Контакт</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Профил</h4>
+                <ul class="footer-links">
+                    <li><a href="login.html">Вход</a></li>
+                    <li><a href="register.html">Регистрация</a></li>
+                    <li><a href="forgot-password.html">Забравена парола</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-meta">
+            <div>© 2026 Да учим с Бъни</div>
+            <div class="footer-badges">
+                <a class="footer-badge" href="index.html#contact">Свържи се</a>
+                <a class="footer-badge" href="games.html">Играй</a>
+            </div>
+        </div>
+    </div>
 </footer>
 
 <script>
@@ -170,17 +210,45 @@ function updateNavigation() {
     var empty = document.getElementById("articles-empty");
     var articlesData = [];
     var currentPage = 0;
-    var cardsPerPage = 3;
+    var cardsPerPage = 4;
+
+    function computeCardsPerPage() {
+        // Desktop: 4 cards. Tablet: 2. Mobile: 1.
+        if (window.matchMedia && window.matchMedia("(max-width: 600px)").matches) return 1;
+        if (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) return 2;
+        return 4;
+    }
 
     function renderCard(a) {
         var date = a.createdAt ? new Date(a.createdAt).toLocaleDateString("bg-BG") : "";
-        return "<h3>" + (a.title || "") + "</h3><p>" + (a.shortDescription || "") + "</p>" + (date ? "<small>" + date + "</small>" : "") + '<a href="article.html?id=' + a.id + '" class="btn read-more">Прочети повече</a>';
+        return "<h3>" + (a.title || "") + "</h3>" + (date ? "<small>" + date + "</small>" : "") + '<a href="article.html?id=' + a.id + '" class="btn read-more">Прочети повече</a>';
+    }
+
+    function getViewportWidth() {
+        // Use inner viewport width (exclude horizontal padding used as gutters for arrows)
+        if (!carouselOuter) return 0;
+        var cs = window.getComputedStyle(carouselOuter);
+        var pl = parseFloat(cs.paddingLeft) || 0;
+        var pr = parseFloat(cs.paddingRight) || 0;
+        return Math.max(0, carouselOuter.clientWidth - pl - pr);
+    }
+
+    function applyPageWidths() {
+        var viewportWidth = getViewportWidth();
+        if (!carouselInner || !viewportWidth) return;
+        var pages = carouselInner.querySelectorAll(".articles-carousel-page");
+        for (var i = 0; i < pages.length; i++) {
+            pages[i].style.width = viewportWidth + "px";
+            pages[i].style.flex = "0 0 " + viewportWidth + "px";
+        }
+        carouselInner.style.width = (pages.length * viewportWidth) + "px";
     }
 
     function updateCarouselPosition() {
-        var outerWidth = carouselOuter ? carouselOuter.offsetWidth : 0;
-        if (carouselInner && outerWidth) {
-            carouselInner.style.transform = "translateX(-" + (currentPage * outerWidth) + "px)";
+        var viewportWidth = getViewportWidth();
+        applyPageWidths();
+        if (carouselInner && viewportWidth) {
+            carouselInner.style.transform = "translateX(-" + (currentPage * viewportWidth) + "px)";
         }
         if (arrowLeft) {
             arrowLeft.style.visibility = currentPage === 0 ? "hidden" : "visible";
@@ -206,19 +274,30 @@ function updateNavigation() {
 
     function buildCarousel(articles) {
         articlesData = articles;
+        cardsPerPage = computeCardsPerPage();
         carouselInner.innerHTML = "";
-        articles.forEach(function(a) {
-            var card = document.createElement("div");
-            card.className = "article-card article-card-carousel";
-            card.innerHTML = renderCard(a);
-            carouselInner.appendChild(card);
-        });
         currentPage = 0;
-        carouselInner.style.width = ((articles.length / cardsPerPage) * 100) + "%";
-        var cards = carouselInner.querySelectorAll(".article-card-carousel");
-        for (var i = 0; i < cards.length; i++) {
-            cards[i].style.flex = "0 0 " + (100 / articles.length) + "%";
+
+        for (var i = 0; i < articles.length; i += cardsPerPage) {
+            var page = document.createElement("div");
+            page.className = "articles-carousel-page";
+            var slice = articles.slice(i, i + cardsPerPage);
+            slice.forEach(function(a) {
+                var card = document.createElement("div");
+                card.className = "article-card article-card-carousel";
+                card.innerHTML = renderCard(a);
+                page.appendChild(card);
+            });
+            // Keep consistent layout: fill remaining slots with invisible spacers
+            for (var s = slice.length; s < cardsPerPage; s++) {
+                var spacer = document.createElement("div");
+                spacer.className = "articles-carousel-spacer";
+                spacer.setAttribute("aria-hidden", "true");
+                page.appendChild(spacer);
+            }
+            carouselInner.appendChild(page);
         }
+
         var numPages = maxPage() + 1;
         dotsContainer.innerHTML = "";
         for (var p = 0; p < numPages; p++) {
@@ -255,6 +334,7 @@ function updateNavigation() {
                 return;
             }
             var list = data.articles;
+            cardsPerPage = computeCardsPerPage();
             if (list.length > cardsPerPage) {
                 container.style.display = "none";
                 carouselOuter.style.display = "block";
@@ -271,7 +351,17 @@ function updateNavigation() {
                         updateCarouselPosition();
                     }
                 };
-                window.addEventListener("resize", updateCarouselPosition);
+                window.addEventListener("resize", function() {
+                    var next = computeCardsPerPage();
+                    if (next !== cardsPerPage) {
+                        var prev = cardsPerPage;
+                        cardsPerPage = next;
+                        currentPage = 0;
+                        buildCarousel(articlesData);
+                    } else {
+                        updateCarouselPosition();
+                    }
+                });
             } else {
                 list.forEach(function(a) {
                     var card = document.createElement("div");

@@ -103,6 +103,20 @@ JWT_SECRET=your_super_secret_key_here
 JWT_EXPIRES_IN=1d
 DB_PATH=./data/app.db
 CORS_ORIGIN=*
+
+# SMTP (за "Забравена парола")
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your@gmail.com
+SMTP_PASS=app_password_here
+SMTP_FROM="Да учим с Бъни <your@gmail.com>"
+
+# EmailJS (алтернатива при Gmail Advanced Protection)
+EMAILJS_SERVICE_ID=service_xxx
+EMAILJS_TEMPLATE_ID_RESET=template_xxx
+EMAILJS_PUBLIC_KEY=public_xxx
+EMAILJS_PRIVATE_KEY=private_xxx
 ```
 
 4. Run the server:

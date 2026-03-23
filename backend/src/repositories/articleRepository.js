@@ -41,15 +41,21 @@ function updateArticle(id, { title, shortDescription, content, image }) {
   const existing = findById(id);
   if (!existing) return null;
 
+  // NOTE: use "undefined means keep existing" so callers can set NULL explicitly
+  const nextTitle = title === undefined ? existing.title : title;
+  const nextShort = shortDescription === undefined ? existing.shortDescription : shortDescription;
+  const nextContent = content === undefined ? existing.content : content;
+  const nextImage = image === undefined ? existing.image : image;
+
   db.prepare(
     `UPDATE articles 
      SET title = ?, shortDescription = ?, content = ?, image = ?
      WHERE id = ?`
   ).run(
-    title ?? existing.title,
-    shortDescription ?? existing.shortDescription,
-    content ?? existing.content,
-    image ?? existing.image,
+    nextTitle,
+    nextShort,
+    nextContent,
+    nextImage,
     id
   );
   return findById(id);

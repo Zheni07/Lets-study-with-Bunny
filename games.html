@@ -3,43 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <title>Игри - Да учим с Бъни</title>
-    <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css?v=4">
 </head>
+
+<body>
+
+<header class="header">
+    <div class="logo-area">
+        <img src="assets/images/logo.png" alt="Лого Бъни" class="logo">
+    </div>
+    <nav class="nav" id="nav"></nav>
+</header>
+
+<div class="background-animation">
+    <div class="bubble bubble1"></div>
+    <div class="bubble bubble2"></div>
+    <div class="bubble bubble3"></div>
+    <div class="bubble bubble4"></div>
+    <div class="bubble bubble5"></div>
+    <div class="bubble bubble6"></div>
+    <div class="bubble bubble7"></div>
+    <div class="bubble bubble8"></div>
+    <div class="bubble bubble9"></div>
+    <div class="bubble bubble10"></div>
+</div>
+
+<section class="games-section">
+    <div class="white-card">
+        <h2>Игри с Бъни</h2>
+
+        <div class="games-container">
+            <div class="game-card">
+                <img src="assets/images/LetterWorld.png" alt="Буквен свят" class="game-image">
+                <h3>Буквен свят</h3>
+                <p class="game-description">Открий буквите от азбуката и тренирай бързина и внимание.</p>
+                <a href="LetterWorld/index.html" class="btn">Играй</a>
+            </div>
+
+            <div class="game-card">
+                <img src="assets/images/Detective.png" alt="Детектив на грешки" class="game-image">
+                <h3>Детектив на грешки</h3>
+                <p class="game-description">Открий буквите грешките в изречението и ги поправи.</p>
+                <a href="DetectiveBunny/index.html" class="btn">Играй</a>
+            </div>
+
+            <div class="game-card game-card--disabled">
+                <div class="game-image game-image--placeholder">Скоро</div>
+                <h3>Ловец на посоки</h3>
+                <p class="game-description">Намери липсващата стрелка и помогни на Бъни да открие правилния път през лабиринта.</p>
+                <a href="#" class="btn" aria-disabled="true">Играй</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-inner">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="footer-title">Да учим с Бъни</div>
+                <div class="footer-desc">
+                    Игри и полезни материали за подкрепа на деца с трудности при четене и писане.
+                </div>
+                <div class="footer-badges">
+                    <span class="footer-badge">Дислексия • подкрепа</span>
+                    <span class="footer-badge">Игри • обучение</span>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Бързи връзки</h4>
+                <ul class="footer-links">
+                    <li><a href="index.html">Начало</a></li>
+                    <li><a href="games.html">Игри</a></li>
+                    <li><a href="index.html#articles">Статии</a></li>
+                    <li><a href="index.html#contact">Контакт</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Профил</h4>
+                <ul class="footer-links">
+                    <li><a href="login.html">Вход</a></li>
+                    <li><a href="register.html">Регистрация</a></li>
+                    <li><a href="forgot-password.html">Забравена парола</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-meta">
+            <div>© 2026 Да учим с Бъни</div>
+            <div class="footer-badges">
+                <a class="footer-badge" href="index.html#contact">Свържи се</a>
+                <a class="footer-badge" href="games.html">Играй</a>
+            </div>
+        </div>
+    </div>
+</footer>
 
 <script src="js/auth.js?v=4"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const role = getRole(); // Взема текущата роля
+    const role = typeof getRole === "function" ? getRole() : "guest";
+    const nav = document.getElementById("nav");
 
-    // Навигация според ролята
-    const nav = document.querySelector(".nav");
-    if(role === "user") {
-        nav.innerHTML = `
-            <a href="index.html">Начало</a>
-            <a href="games.html" class="active">Игри</a>
-            <a href="#" onclick="logout()">Изход</a>
-        `;
-    } else if(role === "admin") {
-        nav.innerHTML = `
-            <a href="index.html">Начало</a>
-            <a href="games.html" class="active">Игри</a>
-            <a href="admin.html">Админ панел</a>
-            <a href="#" onclick="logout()">Изход</a>
-        `;
-    } else {
-        // гост
-        nav.innerHTML = `
-            <a href="index.html">Начало</a>
-            <a href="games.html" class="active">Игри</a>
-            <a href="login.html">Вход</a>
-            <a href="register.html">Регистрация</a>
-        `;
+    if (nav) {
+        if (role === "user") {
+            nav.innerHTML = `
+                <a href="index.html">Начало</a>
+                <a href="games.html" class="active">Игри</a>
+                <a href="#" onclick="logout(); return false;">Изход</a>
+            `;
+        } else if (role === "admin") {
+            nav.innerHTML = `
+                <a href="index.html">Начало</a>
+                <a href="games.html" class="active">Игри</a>
+                <a href="admin.html">Админ панел</a>
+                <a href="#" onclick="logout(); return false;">Изход</a>
+            `;
+        } else {
+            nav.innerHTML = `
+                <a href="index.html">Начало</a>
+                <a href="games.html" class="active">Игри</a>
+                <a href="login.html">Вход</a>
+                <a href="register.html">Регистрация</a>
+            `;
+        }
     }
 
-    // Контрол на бутоните за гост
-    if(role === "guest") {
+    // Гостите не могат да стартират игри
+    if (role === "guest") {
         const buttons = document.querySelectorAll(".game-card a.btn");
         buttons.forEach(btn => {
             btn.addEventListener("click", function(e) {
@@ -50,47 +145,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 </script>
-
-<body>
-
-<header class="header">
-    <div class="logo-area">
-        <img src="assets/images/logo.png" alt="Лого Бъни" class="logo">
-    </div>
-    <nav class="nav">
-        <a href="index.html">Начало</a>
-        <a href="games.html" class="active">Игри</a>
-        <a href="login.html">Вход</a>
-        <a href="register.html">Регистрация</a>
-    </nav>
-</header>
-
-<section class="games-section">
-    <div class="white-card">
-        <h2>Игри с Бъни</h2>
-        <div class="games-container">
-            <div class="game-card">
-                <h3>Игра 1</h3>
-                <p>Описание на играта.</p>
-                <a href="#" class="btn">Играй</a>
-            </div>
-            <div class="game-card">
-                <h3>Игра 2</h3>
-                <p>Описание на играта.</p>
-                <a href="#" class="btn">Играй</a>
-            </div>
-            <div class="game-card">
-                <h3>Игра 3</h3>
-                <p>Описание на играта.</p>
-                <a href="#" class="btn">Играй</a>
-            </div>
-        </div>
-    </div>
-</section>
-
-<footer>
-    <p>© 2026 Да учим с Бъни</p>
-</footer>
 
 </body>
 </html>

@@ -98,10 +98,6 @@
                 <input type="text" id="article-title" name="title" placeholder="Заглавие на статията" required>
             </div>
             <div class="form-group">
-                <label for="article-short">Кратко описание *</label>
-                <input type="text" id="article-short" name="shortDescription" placeholder="Кратко описание" required>
-            </div>
-            <div class="form-group">
                 <label for="article-content">Пълен текст *</label>
                 <textarea id="article-content" name="content" placeholder="Съдържание на статията" required></textarea>
             </div>
@@ -136,12 +132,16 @@
                 <input type="text" id="edit-article-title" name="title" required>
             </div>
             <div class="form-group">
-                <label for="edit-article-short">Кратко описание *</label>
-                <input type="text" id="edit-article-short" name="shortDescription" required>
-            </div>
-            <div class="form-group">
                 <label for="edit-article-content">Пълен текст *</label>
                 <textarea id="edit-article-content" name="content" required></textarea>
+            </div>
+            <input type="hidden" id="edit-remove-image" name="removeImage" value="false">
+            <div class="form-group" id="edit-current-image-wrap" style="display: none;">
+                <label>Текущ прикачен файл</label>
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                    <a id="edit-current-image-link" href="#" target="_blank" rel="noopener noreferrer">Виж файла</a>
+                    <button type="button" class="btn btn-small btn-danger" id="edit-remove-image-btn" onclick="toggleRemoveImage()">Махни файла</button>
+                </div>
             </div>
             <div class="form-group">
                 <label for="edit-article-image">Нова снимка (по избор)</label>
@@ -155,7 +155,47 @@
 </main>
 
 <footer>
-    <p>© 2026 Да учим с Бъни</p>
+    <div class="footer-inner">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="footer-title">Да учим с Бъни</div>
+                <div class="footer-desc">
+                    Игри и полезни материали за подкрепа на деца с трудности при четене и писане.
+                </div>
+                <div class="footer-badges">
+                    <span class="footer-badge">Дислексия • подкрепа</span>
+                    <span class="footer-badge">Игри • обучение</span>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Бързи връзки</h4>
+                <ul class="footer-links">
+                    <li><a href="index.html">Начало</a></li>
+                    <li><a href="games.html">Игри</a></li>
+                    <li><a href="index.html#articles">Статии</a></li>
+                    <li><a href="index.html#contact">Контакт</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Профил</h4>
+                <ul class="footer-links">
+                    <li><a href="login.html">Вход</a></li>
+                    <li><a href="register.html">Регистрация</a></li>
+                    <li><a href="forgot-password.html">Забравена парола</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-meta">
+            <div>© 2026 Да учим с Бъни</div>
+            <div class="footer-badges">
+                <a class="footer-badge" href="index.html#contact">Свържи се</a>
+                <a class="footer-badge" href="games.html">Играй</a>
+            </div>
+        </div>
+    </div>
 </footer>
 
 <script>
@@ -242,7 +282,6 @@
         const form = e.target;
         const formData = new FormData();
         formData.append("title", document.getElementById("article-title").value.trim());
-        formData.append("shortDescription", document.getElementById("article-short").value.trim());
         formData.append("content", document.getElementById("article-content").value.trim());
         const fileInput = document.getElementById("article-image");
         if (fileInput.files && fileInput.files[0]) {
@@ -314,9 +353,19 @@
             var a = data.article;
             document.getElementById("edit-article-id").value = a.id;
             document.getElementById("edit-article-title").value = a.title || "";
-            document.getElementById("edit-article-short").value = a.shortDescription || "";
             document.getElementById("edit-article-content").value = a.content || "";
             document.getElementById("edit-article-image").value = "";
+            document.getElementById("edit-remove-image").value = "false";
+            var wrap = document.getElementById("edit-current-image-wrap");
+            var link = document.getElementById("edit-current-image-link");
+            if (a.image) {
+                var baseUrl = window.location.protocol + "//" + window.location.hostname + ":4000";
+                link.href = a.image.indexOf("http") === 0 ? a.image : baseUrl + (a.image.indexOf("/") === 0 ? "" : "/") + a.image;
+                wrap.style.display = "block";
+            } else {
+                wrap.style.display = "none";
+                link.href = "#";
+            }
             section.style.display = "block";
             section.scrollIntoView({ behavior: "smooth" });
         } catch (err) {
@@ -331,6 +380,23 @@
         document.getElementById("edit-article-message").style.display = "none";
     }
 
+    function toggleRemoveImage() {
+        var hidden = document.getElementById("edit-remove-image");
+        var next = hidden.value !== "true";
+        hidden.value = next ? "true" : "false";
+        var wrap = document.getElementById("edit-current-image-wrap");
+        var link = document.getElementById("edit-current-image-link");
+        // If admin chooses to remove, hide any indication immediately
+        if (next) {
+            if (wrap) wrap.style.display = "none";
+            if (link) link.href = "#";
+            document.getElementById("edit-article-image").value = "";
+        } else {
+            // If un-remove is needed, user should re-open edit (we don't keep old URL visible)
+            if (wrap) wrap.style.display = "none";
+        }
+    }
+
     document.getElementById("edit-article-form").addEventListener("submit", async function(e) {
         e.preventDefault();
         var id = document.getElementById("edit-article-id").value;
@@ -338,10 +404,16 @@
         msgEl.style.display = "none";
         var formData = new FormData();
         formData.append("title", document.getElementById("edit-article-title").value.trim());
-        formData.append("shortDescription", document.getElementById("edit-article-short").value.trim());
         formData.append("content", document.getElementById("edit-article-content").value.trim());
         var fileInput = document.getElementById("edit-article-image");
-        if (fileInput.files && fileInput.files[0]) formData.append("image", fileInput.files[0]);
+        var removeFlag = document.getElementById("edit-remove-image").value === "true";
+        if (fileInput.files && fileInput.files[0]) {
+            formData.append("image", fileInput.files[0]);
+            removeFlag = false;
+        }
+        if (removeFlag) {
+            formData.append("removeImage", "true");
+        }
         try {
             var response = await fetch(apiBase + "/articles/" + id, {
                 method: "PUT",
@@ -355,7 +427,8 @@
             msgEl.className = "message success";
             msgEl.textContent = "Статията е запазена.";
             msgEl.style.display = "block";
-            cancelEditArticle();
+            // Re-open the article in edit mode so the UI reflects current attachment state
+            await editArticle(Number(id));
             loadArticles();
         } catch (err) {
             msgEl.className = "message error";

@@ -24,13 +24,52 @@
     <article id="article-content" style="display: none;">
         <h1 id="article-title"></h1>
         <p class="article-meta" id="article-meta"></p>
-        <p id="article-short" style="font-weight: bold; color: #444;"></p>
         <div id="article-body" class="article-body"></div>
     </article>
 </main>
 
 <footer>
-    <p>© 2026 Да учим с Бъни</p>
+    <div class="footer-inner">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="footer-title">Да учим с Бъни</div>
+                <div class="footer-desc">
+                    Игри и полезни материали за подкрепа на деца с трудности при четене и писане.
+                </div>
+                <div class="footer-badges">
+                    <span class="footer-badge">Дислексия • подкрепа</span>
+                    <span class="footer-badge">Игри • обучение</span>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Бързи връзки</h4>
+                <ul class="footer-links">
+                    <li><a href="index.html">Начало</a></li>
+                    <li><a href="games.html">Игри</a></li>
+                    <li><a href="index.html#articles">Статии</a></li>
+                    <li><a href="index.html#contact">Контакт</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Профил</h4>
+                <ul class="footer-links">
+                    <li><a href="login.html">Вход</a></li>
+                    <li><a href="register.html">Регистрация</a></li>
+                    <li><a href="forgot-password.html">Забравена парола</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-meta">
+            <div>© 2026 Да учим с Бъни</div>
+            <div class="footer-badges">
+                <a class="footer-badge" href="index.html#contact">Свържи се</a>
+                <a class="footer-badge" href="games.html">Играй</a>
+            </div>
+        </div>
+    </div>
 </footer>
 
 <script>
@@ -77,7 +116,6 @@
             }
             var a = data.article;
             document.getElementById("article-title").textContent = a.title || "";
-            document.getElementById("article-short").textContent = a.shortDescription || "";
             var date = a.createdAt ? new Date(a.createdAt).toLocaleDateString("bg-BG") : "";
             document.getElementById("article-meta").textContent = date + (a.author ? " — " + a.author : "");
             var body = document.getElementById("article-body");
@@ -85,11 +123,57 @@
                 var img = document.createElement("img");
                 img.src = a.image.indexOf("http") === 0 ? a.image : baseUrl + (a.image.indexOf("/") === 0 ? "" : "/") + a.image;
                 img.alt = a.title || "";
+                img.addEventListener("error", function() {
+                    // If the file was deleted or missing, hide the broken image icon
+                    if (img && img.parentNode) img.parentNode.removeChild(img);
+                });
                 body.appendChild(img);
             }
-            var p = document.createElement("div");
-            p.innerHTML = (a.content || "").replace(/\n/g, "<br>");
-            body.appendChild(p);
+            function escapeHtml(s) {
+                return String(s)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+            }
+
+            function renderArticleBody(raw) {
+                var text = (raw || "").replace(/\r\n/g, "\n").trim();
+                if (!text) return "";
+
+                var blocks = text.split(/\n{2,}/g);
+                var html = [];
+
+                for (var i = 0; i < blocks.length; i++) {
+                    var block = blocks[i].trim();
+                    if (!block) continue;
+
+                    // Simple bullet list support: lines starting with "- " or "• "
+                    var lines = block.split("\n");
+                    var allBullets = lines.length > 1 && lines.every(function(l) {
+                        var t = l.trim();
+                        return t.startsWith("- ") || t.startsWith("• ");
+                    });
+                    if (allBullets) {
+                        html.push("<ul>");
+                        lines.forEach(function(l) {
+                            var t = l.trim().replace(/^(- |• )/, "");
+                            html.push("<li>" + escapeHtml(t) + "</li>");
+                        });
+                        html.push("</ul>");
+                    } else {
+                        // Paragraph: keep single newlines as <br>
+                        html.push("<p>" + escapeHtml(block).replace(/\n/g, "<br>") + "</p>");
+                    }
+                }
+
+                return html.join("");
+            }
+
+            var contentEl = document.createElement("div");
+            contentEl.innerHTML = renderArticleBody(a.content);
+            body.appendChild(contentEl);
             content.style.display = "block";
             document.title = (a.title || "Статия") + " - Да учим с Бъни";
         })

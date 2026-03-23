@@ -130,6 +130,12 @@ function updateUserRole(id, role) {
   return findById(id);
 }
 
+function updateUserPassword(id, passwordHash) {
+  const db = getDb();
+  db.prepare("UPDATE users SET password = ? WHERE id = ?").run(passwordHash, id);
+  return findById(id);
+}
+
 module.exports = {
   mapUser,
   findByEmail,
@@ -138,5 +144,6 @@ module.exports = {
   listUsers,
   deleteUser,
   updateUserRole,
+  updateUserPassword,
 };
 

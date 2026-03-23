@@ -1,5 +1,10 @@
 const bcrypt = require("bcrypt");
-const { findByEmail, createUser, findById, mapUser } = require("../repositories/userRepository");
+const crypto = require("crypto");
+const { env } = require("../config/env");
+const { findByEmail, createUser, findById, mapUser, updateUserPassword } = require("../repositories/userRepository");
+const { createResetToken, findValidResetToken, markTokenUsed } = require("../repositories/passwordResetRepository");
+const { smtpConfigured, sendMail } = require("../utils/mailer");
+const { emailjsConfigured, sendResetEmail } = require("../utils/emailjs");
 const { signToken } = require("../utils/jwt");
 
 async function register({ username, email, password, role = "user" }) {
@@ -92,4 +97,102 @@ module.exports = {
   register,
   login,
   getCurrentUser,
+  requestPasswordReset,
+  resetPassword,
 };
+
+function hashResetToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+async function requestPasswordReset({ email, frontendBaseUrl }) {
+  // Always return success message to avoid user enumeration
+  const user = findByEmail(email);
+  if (!user) {
+    return { message: "Ако има акаунт с този имейл, ще получите инструкции за смяна на парола." };
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const tokenHash = hashResetToken(rawToken);
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+
+  createResetToken({ userId: user.id, tokenHash, expiresAt });
+
+  const base = frontendBaseUrl || "";
+  const resetUrl = base
+    ? `${base.replace(/\/+$/, "")}/reset-password.html?token=${rawToken}`
+    : null;
+
+  // Preferred: EmailJS (works with Gmail Advanced Protection)
+  if (emailjsConfigured() && resetUrl) {
+    await sendResetEmail({ toEmail: user.email, resetUrl });
+    return { message: "Изпратихме имейл с линк за смяна на парола (ако акаунтът съществува)." };
+  }
+
+  // Send real email if SMTP configured
+  if (smtpConfigured() && resetUrl) {
+    const subject = "Смяна на парола — Да учим с Бъни";
+    const text =
+      "Заявихте смяна на парола.\n\n" +
+      `Линк за смяна на парола (валиден 1 час):\n${resetUrl}\n\n` +
+      "Ако не сте вие, игнорирайте този имейл.";
+    const html =
+      "<p>Заявихте смяна на парола.</p>" +
+      `<p><a href="${resetUrl}">Натиснете тук, за да смените паролата</a> (валиден 1 час).</p>` +
+      "<p>Ако не сте вие, игнорирайте този имейл.</p>";
+    await sendMail({ to: user.email, subject, text, html });
+    return { message: "Изпратихме имейл с линк за смяна на парола (ако акаунтът съществува)." };
+  }
+
+  // Dev-friendly fallback (no SMTP)
+  if (env.NODE_ENV === "development") {
+    return {
+      message: "EmailJS/SMTP не са настроени. Линкът за смяна на парола е генериран (dev режим).",
+      resetUrl,
+    };
+  }
+
+  return { message: "Ако има акаунт с този имейл, ще получите инструкции за смяна на парола." };
+}
+
+async function resetPassword({ token, newPassword }) {
+  if (!token || typeof token !== "string") {
+    const error = new Error("Невалиден или липсващ token.");
+    error.status = 400;
+    error.expose = true;
+    throw error;
+  }
+  if (!newPassword || newPassword.length < 6) {
+    const error = new Error("Паролата трябва да е поне 6 символа.");
+    error.status = 400;
+    error.expose = true;
+    throw error;
+  }
+
+  const tokenHash = hashResetToken(token);
+  const row = findValidResetToken(tokenHash);
+  if (!row) {
+    const error = new Error("Невалиден или изтекъл token.");
+    error.status = 400;
+    error.expose = true;
+    throw error;
+  }
+  if (row.usedAt) {
+    const error = new Error("Token-ът вече е използван.");
+    error.status = 400;
+    error.expose = true;
+    throw error;
+  }
+  if (new Date(row.expiresAt).getTime() < Date.now()) {
+    const error = new Error("Token-ът е изтекъл.");
+    error.status = 400;
+    error.expose = true;
+    throw error;
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  updateUserPassword(row.userId, passwordHash);
+  markTokenUsed(row.id);
+
+  return { message: "Паролата е сменена успешно. Можете да влезете с новата парола." };
+}
