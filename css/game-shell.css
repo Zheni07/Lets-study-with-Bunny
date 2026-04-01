@@ -1,0 +1,126 @@
+/* Unity игра вградена в общия layout на сайта */
+
+.game-page-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.game-page-main {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  padding: 40px 20px;
+}
+
+.game-page-card {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.game-back-link {
+  margin: 0 0 18px 0;
+  font-size: 15px;
+}
+
+.game-back-link a {
+  color: var(--bg5);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.game-back-link a:hover {
+  text-decoration: underline;
+}
+
+.game-canvas-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+/* Премахва абсолютното центриране на Unity шаблона вътре в картата */
+.game-canvas-wrap #unity-container.unity-desktop {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  margin: 0 auto;
+}
+
+.game-canvas-wrap #unity-container.unity-mobile {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  max-width: 100%;
+  height: min(70vh, 640px);
+  min-height: 280px;
+}
+
+.game-canvas-wrap .unity-mobile #unity-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.game-page-instructions {
+  width: 100%;
+  margin-top: 18px;
+  text-align: left;
+}
+
+.game-page-instructions h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: var(--bg5);
+}
+
+.game-instructions-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0 0 12px 0;
+}
+
+.game-instructions-audio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.game-instructions-audio-btn[aria-pressed="true"] {
+  filter: brightness(0.95);
+}
+
+.game-page-instructions-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-color);
+  white-space: pre-wrap; /* preserve line breaks from localStorage */
+}
+
+/* Access guard shown when the user is not logged in / not allowed */
+.game-access-denied {
+  width: 100%;
+  padding: 16px 18px;
+  margin: 0 0 18px 0;
+  border-radius: 18px;
+  background: rgba(255, 154, 61, 0.14);
+  border: 2px solid rgba(255, 154, 61, 0.9);
+  color: var(--text-color);
+  text-align: center;
+  font-weight: 800;
+}
+
+.game-access-denied a {
+  color: var(--orange-dark);
+  text-decoration: underline;
+}

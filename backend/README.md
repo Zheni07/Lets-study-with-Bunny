@@ -128,7 +128,7 @@ npm start      # Production mode
 ## Database
 
 The database is automatically initialized on first run with:
-- Default admin user: `admin@example.com` / `Admin123!`
+- Default admin user: `dislexia.bunny@gmail.com` / `Admin123!`
 - Three sample games
 
 ## Authentication

@@ -25,7 +25,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  font-family: "OpenDyslexic", sans-serif;
+  font-family: Arial, sans-serif;
   background: var(--bg1);
   color: var(--text-color);
   margin: 0;
@@ -270,26 +270,24 @@ main,
 .articles-carousel-inner {
   display: flex;
   flex-wrap: nowrap;
-  gap: 48px;
+  gap: 0;
   padding: 20px 0;
   transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
   will-change: transform;
 }
 
-/* One "page" inside the carousel (shows N cards) */
+/* One "page" inside the carousel (shows N cards) – Grid for reliable equal columns */
 .articles-carousel-page {
-  display: flex;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 48px;
   align-items: stretch;
-  justify-content: center;
+  min-width: 0;
 }
 
 /* Article cards */
 .article-card-carousel {
-  flex-shrink: 0;
-  width: 280px;
-  flex: 0 0 280px;
+  min-width: 0;
   background: var(--bg2);
   padding: 26px;
   border-radius: 22px;
@@ -316,14 +314,24 @@ main,
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
 }
 
 .articles-carousel-spacer {
-  width: 280px;
-  flex: 0 0 280px;
   visibility: hidden;
   pointer-events: none;
+  min-width: 0;
+}
+
+/* Last page with only 1 card – full width, no empty columns */
+.articles-carousel-page--single {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.articles-carousel-page--single .article-card-carousel {
+  max-width: 320px;
 }
 
 .article-card-carousel p {
@@ -334,6 +342,7 @@ main,
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   overflow: hidden;
 }
 
@@ -366,7 +375,7 @@ main,
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
+  z-index: 10;
   box-shadow: 0 6px 18px rgba(107, 144, 128, 0.25);
   transition: all 0.25s ease;
 }
@@ -596,6 +605,11 @@ main,
     padding: 0 72px;
   }
 
+  .articles-carousel-page {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
   .articles-arrow-left {
     left: 16px;
   }
@@ -628,6 +642,11 @@ main,
 
   .articles-carousel-outer {
     padding: 0 60px;
+  }
+
+  .articles-carousel-page {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .articles-arrow-left {
@@ -684,6 +703,25 @@ main,
   margin-top: 10px;
 }
 
+.game-instructions {
+  width: 100%;
+  margin-top: 14px;
+  text-align: left;
+}
+
+.game-instructions label {
+  display: block;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--bg5);
+}
+
+.game-instructions-text {
+  white-space: normal;
+  line-height: 1.5;
+}
+
 .game-card--disabled {
   opacity: 0.8;
 }
@@ -691,6 +729,23 @@ main,
 .game-card--disabled .btn {
   cursor: default;
   pointer-events: none;
+}
+
+.games-access-note {
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 154, 61, 0.14);
+  border: 2px solid rgba(255, 154, 61, 0.95);
+  color: var(--text-color);
+  text-align: center;
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.games-access-note a {
+  color: var(--orange-dark);
+  text-decoration: underline;
 }
 
 .game-image--placeholder {
@@ -946,7 +1001,7 @@ select {
   width: 100%;
   padding: 14px 16px;
   font-size: 16px;
-  font-family: "OpenDyslexic", sans-serif;
+  font-family: Arial, sans-serif;
   color: var(--text-color);
   background: var(--bg2);
   border: 2px solid var(--bg4);

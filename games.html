@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Игри - Да учим с Бъни</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
+    <!-- Шрифт (Fontsource вместо Google Fonts) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/opendyslexic@5.2.5/400.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/opendyslexic@5.2.5/700.css">
     <link rel="stylesheet" href="css/style.css?v=4">
 </head>
 
@@ -33,27 +36,37 @@
 <section class="games-section">
     <div class="white-card">
         <h2>Игри с Бъни</h2>
+        <div id="games-access-note" class="games-access-note" hidden></div>
 
         <div class="games-container">
             <div class="game-card">
                 <img src="assets/images/LetterWorld.png" alt="Буквен свят" class="game-image">
                 <h3>Буквен свят</h3>
                 <p class="game-description">Открий буквите от азбуката и тренирай бързина и внимание.</p>
-                <a href="LetterWorld/index.html" class="btn">Играй</a>
+                <a href="LetterWorld/index.html" class="btn" data-game-id="LetterWorld">Играй</a>
+                <div class="game-instructions" id="instructions-LetterWorld" hidden>
+                    <p class="game-instructions-text">Напиши тук как се играе.</p>
+                </div>
             </div>
 
             <div class="game-card">
                 <img src="assets/images/Detective.png" alt="Детектив на грешки" class="game-image">
                 <h3>Детектив на грешки</h3>
                 <p class="game-description">Открий буквите грешките в изречението и ги поправи.</p>
-                <a href="DetectiveBunny/index.html" class="btn">Играй</a>
+                <a href="DetectiveBunny/index.html" class="btn" data-game-id="DetectiveBunny">Играй</a>
+                <div class="game-instructions" id="instructions-DetectiveBunny" hidden>
+                    <p class="game-instructions-text">Напиши тук как се играе.</p>
+                </div>
             </div>
 
-            <div class="game-card game-card--disabled">
-                <div class="game-image game-image--placeholder">Скоро</div>
+            <div class="game-card">
+                <img src="assets/images/DirectionHunter.png" alt="Ловец на посоки" class="game-image">
                 <h3>Ловец на посоки</h3>
                 <p class="game-description">Намери липсващата стрелка и помогни на Бъни да открие правилния път през лабиринта.</p>
-                <a href="#" class="btn" aria-disabled="true">Играй</a>
+                 <a href="DirectionHunter/index.html" class="btn" data-game-id="DirectionHunter">Играй</a>
+                <div class="game-instructions" id="instructions-DirectionHunter" hidden>
+                    <p class="game-instructions-text">Напиши тук как се играе.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -105,7 +118,15 @@
 
 <script src="js/auth.js?v=4"></script>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", async function() {
+    try {
+        if (typeof checkAuth === "function") {
+            await checkAuth();
+        }
+    } catch (e) {
+        // If auth check fails, treat as guest.
+    }
+
     const role = typeof getRole === "function" ? getRole() : "guest";
     const nav = document.getElementById("nav");
 
@@ -133,16 +154,34 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // Гостите не могат да стартират игри
-    if (role === "guest") {
-        const buttons = document.querySelectorAll(".game-card a.btn");
-        buttons.forEach(btn => {
-            btn.addEventListener("click", function(e) {
-                e.preventDefault();
-                alert("Само регистрирани потребители имат достъп до игрите. Моля, влезте или се регистрирайте.");
-            });
+    // Clear old passed instructions so stale text doesn't remain in localStorage.
+    ["LetterWorld", "DetectiveBunny", "DirectionHunter"].forEach(function(gameId) {
+        localStorage.removeItem(`gameInstructionsText:${gameId}`);
+    });
+
+    // If user is not logged in (guest), disable playing and show a message.
+    const isAllowed = role === "user" || role === "admin";
+    const accessNote = document.getElementById("games-access-note");
+    if (accessNote) {
+        if (!isAllowed) {
+            accessNote.hidden = false;
+            accessNote.innerHTML =
+                'Нямате достъп до игрите, защото не сте влезли в профила си. ' +
+                'Моля, <a href="login.html">влезте</a> или <a href="register.html">се регистрирайте</a>, за да продължите.';
+        } else {
+            accessNote.hidden = true;
+        }
+    }
+
+    if (!isAllowed) {
+        document.querySelectorAll(".game-card a.btn[data-game-id]").forEach(function(btn) {
+            const card = btn.closest(".game-card");
+            if (card) card.classList.add("game-card--disabled");
+            btn.setAttribute("href", "login.html");
+            btn.setAttribute("aria-disabled", "true");
         });
     }
+
 });
 </script>
 

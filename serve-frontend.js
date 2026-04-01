@@ -23,6 +23,7 @@ const MIME = {
   ".mp3": "audio/mpeg",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
+  ".wasm": "application/wasm",
 };
 
 function getMime(ext) {

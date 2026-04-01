@@ -104,16 +104,22 @@ function migrate() {
 function seed() {
   const db = getDb();
 
-  // Seed admin user if none exists
-  const adminExists = db
-    .prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
-    .get();
-  if (!adminExists) {
+  // Admin must be an actual user with a real email
+  const adminEmail = "dislexia.bunny@gmail.com";
+
+  // Ensure the admin role is tied to this exact email
+  const adminByEmail = db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1").get(adminEmail);
+  if (!adminByEmail) {
     const passwordHash = bcrypt.hashSync("Admin123!", 10);
     db.prepare(
       "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)"
-    ).run("Admin", "admin@example.com", passwordHash, "admin");
+    ).run("Admin", adminEmail, passwordHash, "admin");
+  } else {
+    db.prepare("UPDATE users SET role = 'admin' WHERE email = ?").run(adminEmail);
   }
+
+  // Demote any other admins so only the real admin email can access admin endpoints
+  db.prepare("UPDATE users SET role = 'user' WHERE role = 'admin' AND email != ?").run(adminEmail);
 
   // Seed games if empty
   const gamesCount = db.prepare("SELECT COUNT(1) as count FROM games").get()

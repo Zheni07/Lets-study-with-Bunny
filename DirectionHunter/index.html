@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="bg">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Ловец на посоки - Да учим с Бъни</title>
+    <link rel="icon" type="image/png" href="../assets/images/logo.png">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <!-- Шрифт (Fontsource вместо Google Fonts) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/opendyslexic@5.2.5/400.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/opendyslexic@5.2.5/700.css">
+    <link rel="stylesheet" href="../css/style.css?v=4">
+    <link rel="stylesheet" href="../css/game-shell.css?v=1">
+    <link rel="stylesheet" href="TemplateData/style.css">
+  </head>
+  <body class="game-page-body">
+    <header class="header">
+      <div class="logo-area">
+        <a href="../index.html"><img src="../assets/images/logo.png" alt="Лого Бъни" class="logo"></a>
+      </div>
+      <nav class="nav" id="nav"></nav>
+    </header>
+
+    <div class="background-animation">
+      <div class="bubble bubble1"></div>
+      <div class="bubble bubble2"></div>
+      <div class="bubble bubble3"></div>
+      <div class="bubble bubble4"></div>
+      <div class="bubble bubble5"></div>
+      <div class="bubble bubble6"></div>
+      <div class="bubble bubble7"></div>
+      <div class="bubble bubble8"></div>
+      <div class="bubble bubble9"></div>
+      <div class="bubble bubble10"></div>
+    </div>
+
+    <main class="games-section game-page-main">
+      <div class="white-card game-page-card">
+        <p class="game-back-link"><a href="../games.html">← Назад към игрите</a></p>
+        <h2>Ловец на посоки</h2>
+        <div id="game-access-denied" class="game-access-denied" hidden></div>
+        <div class="game-canvas-wrap">
+          <div id="unity-container" class="unity-desktop">
+            <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+            <div id="unity-loading-bar">
+              <div id="unity-logo"></div>
+              <div id="unity-progress-bar-empty">
+                <div id="unity-progress-bar-full"></div>
+              </div>
+            </div>
+            <div id="unity-warning"></div>
+            <div id="unity-footer">
+              <div id="unity-logo-title-footer"></div>
+              <div id="unity-fullscreen-button"></div>
+              <div id="unity-build-title">DirectionHunter</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-page-instructions" id="game-instructions" hidden>
+          <h3>Инструкции как се играе</h3>
+          <div class="game-instructions-actions">
+            <button
+              type="button"
+              class="btn game-instructions-audio-btn"
+              id="instructions-audio-btn"
+              aria-pressed="false"
+            >
+              Слушай инструкциите
+            </button>
+            <audio id="instructions-audio" preload="none" src="../assets/audio/DirectionHunter.mp3"></audio>
+          </div>
+          <p>В играта „Лабиринт с Бъни“ ще трябва да помогнеш на Бъни да намери правилния път. На екрана ще виждаш стрелки или посоки и трябва да избереш правилния отговор, за да продължиш напред. Играта ще те кара да мислиш внимателно и да се ориентираш по-добре. С всяко ниво ще ставаш по-бърз и по-уверен.</p>
+          <div class="game-page-instructions-text" id="game-instructions-text"></div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <div class="footer-title">Да учим с Бъни</div>
+            <div class="footer-desc">
+              Игри и полезни материали за подкрепа на деца с трудности при четене и писане.
+            </div>
+            <div class="footer-badges">
+              <span class="footer-badge">Дислексия • подкрепа</span>
+              <span class="footer-badge">Игри • обучение</span>
+            </div>
+          </div>
+          <div class="footer-col">
+            <h4>Бързи връзки</h4>
+            <ul class="footer-links">
+              <li><a href="../index.html">Начало</a></li>
+              <li><a href="../games.html">Игри</a></li>
+              <li><a href="../index.html#articles">Статии</a></li>
+              <li><a href="../index.html#contact">Контакт</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Профил</h4>
+            <ul class="footer-links">
+              <li><a href="../login.html">Вход</a></li>
+              <li><a href="../register.html">Регистрация</a></li>
+              <li><a href="../forgot-password.html">Забравена парола</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-meta">
+          <div>© 2026 Да учим с Бъни</div>
+          <div class="footer-badges">
+            <a class="footer-badge" href="../index.html#contact">Свържи се</a>
+            <a class="footer-badge" href="../games.html">Играй</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="../js/auth.js?v=4"></script>
+    <script>
+      (function () {
+        var role = typeof getRole === "function" ? getRole() : "guest";
+        var nav = document.getElementById("nav");
+        if (!nav) return;
+        if (role === "user") {
+          nav.innerHTML =
+            '<a href="../index.html">Начало</a><a href="../games.html" class="active">Игри</a><a href="#" onclick="logout(); return false;">Изход</a>';
+        } else if (role === "admin") {
+          nav.innerHTML =
+            '<a href="../index.html">Начало</a><a href="../games.html" class="active">Игри</a><a href="../admin.html?v=2">Админ панел</a><a href="#" onclick="logout(); return false;">Изход</a>';
+        } else {
+          nav.innerHTML =
+            '<a href="../index.html">Начало</a><a href="../games.html" class="active">Игри</a><a href="../login.html">Вход</a><a href="../register.html">Регистрация</a>';
+        }
+      })();
+    </script>
+
+    <script>
+      (async function () {
+        var denialEl = document.getElementById("game-access-denied");
+        try {
+          if (typeof checkAuth === "function") {
+            await checkAuth();
+          }
+        } catch (e) {
+          // If auth check fails, treat as guest.
+        }
+
+        var role = typeof getRole === "function" ? getRole() : "guest";
+        var allowed = role === "user" || role === "admin";
+        if (!allowed) {
+          if (denialEl) {
+            denialEl.hidden = false;
+            denialEl.innerHTML =
+              "Нямате достъп до тази игра, защото не сте влезли в профила си. " +
+              'Моля, <a href="../login.html">влезте</a> или <a href="../register.html">се регистрирайте</a>, за да продължите.';
+          }
+          var unityContainer = document.getElementById("unity-container");
+          if (unityContainer) unityContainer.style.display = "none";
+          return;
+        }
+
+        var canvas = document.querySelector("#unity-canvas");
+
+        function unityShowBanner(msg, type) {
+          var warningBanner = document.querySelector("#unity-warning");
+          function updateBannerVisibility() {
+            warningBanner.style.display = warningBanner.children.length ? "block" : "none";
+          }
+          var div = document.createElement("div");
+          div.innerHTML = msg;
+          warningBanner.appendChild(div);
+          if (type === "error") {
+            div.style = "background: red; padding: 10px;";
+          } else if (type === "warning") {
+            div.style = "background: yellow; padding: 10px;";
+            setTimeout(function () {
+              warningBanner.removeChild(div);
+              updateBannerVisibility();
+            }, 5000);
+          }
+          updateBannerVisibility();
+        }
+
+        var buildUrl = "Build";
+        var loaderUrl = buildUrl + "/WebGL3.loader.js";
+        var config = {
+          arguments: [],
+          dataUrl: buildUrl + "/WebGL3.data",
+          frameworkUrl: buildUrl + "/WebGL3.framework.js",
+          codeUrl: buildUrl + "/WebGL3.wasm",
+          streamingAssetsUrl: "StreamingAssets",
+          companyName: "DefaultCompany",
+          productName: "DirectionHunter",
+          productVersion: "1.0",
+          showBanner: unityShowBanner,
+        };
+
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+          var meta = document.createElement("meta");
+          meta.name = "viewport";
+          meta.content =
+            "width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes";
+          document.getElementsByTagName("head")[0].appendChild(meta);
+          document.querySelector("#unity-container").className = "unity-mobile";
+          canvas.className = "unity-mobile";
+        } else {
+          function resizeDesktopCanvas() {
+            var maxWidth = Math.max(320, window.innerWidth - 48);
+            var maxHeight = Math.max(200, window.innerHeight - 300);
+            var aspect = 960 / 600;
+            var width = maxWidth;
+            var height = width / aspect;
+
+            if (height > maxHeight) {
+              height = maxHeight;
+              width = height * aspect;
+            }
+
+            canvas.style.width = Math.floor(width) + "px";
+            canvas.style.height = Math.floor(height) + "px";
+          }
+
+          resizeDesktopCanvas();
+          window.addEventListener("resize", resizeDesktopCanvas);
+          window.addEventListener("orientationchange", resizeDesktopCanvas);
+        }
+
+        document.querySelector("#unity-loading-bar").style.display = "block";
+
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+          createUnityInstance(canvas, config, (progress) => {
+            document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
+          })
+            .then((unityInstance) => {
+              document.querySelector("#unity-loading-bar").style.display = "none";
+
+              // Render instructions under Unity (set from games.html before navigating).
+              var instructionsPanel = document.getElementById("game-instructions");
+              if (instructionsPanel) instructionsPanel.hidden = false;
+
+              // Instructions audio button
+              (function () {
+                var btn = document.getElementById("instructions-audio-btn");
+                var audio = document.getElementById("instructions-audio");
+                if (!btn || !audio) return;
+
+                function setPlayingState(isPlaying) {
+                  btn.setAttribute("aria-pressed", isPlaying ? "true" : "false");
+                  btn.textContent = isPlaying ? "Пауза" : "Слушай инструкциите";
+                }
+
+                btn.addEventListener("click", function () {
+                  if (!audio.src) return;
+                  if (audio.paused) {
+                    audio.currentTime = audio.currentTime || 0;
+                    audio.play().then(
+                      function () {
+                        setPlayingState(true);
+                      },
+                      function () {}
+                    );
+                  } else {
+                    audio.pause();
+                    setPlayingState(false);
+                  }
+                });
+
+                audio.addEventListener("ended", function () {
+                  setPlayingState(false);
+                  audio.currentTime = 0;
+                });
+                audio.addEventListener("pause", function () {
+                  setPlayingState(false);
+                });
+                audio.addEventListener("play", function () {
+                  setPlayingState(true);
+                });
+              })();
+
+              document.querySelector("#unity-fullscreen-button").onclick = () => {
+                unityInstance.SetFullscreen(1);
+              };
+            })
+            .catch((message) => {
+              alert(message);
+            });
+        };
+
+        document.body.appendChild(script);
+      })();
+    </script>
+  </body>
+</html>

@@ -6,9 +6,11 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Да учим с Бъни</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
 
-    <!-- Шрифт -->
-    <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
+    <!-- Шрифт (Fontsource вместо Google Fonts; OpenDyslexic там връща 400) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/opendyslexic@5.2.5/400.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/opendyslexic@5.2.5/700.css">
 
     <!-- CSS (v=4 so 127.0.0.1 and 172.20.10.11 load the same) -->
     <link rel="stylesheet" href="css/style.css?v=4">
@@ -51,9 +53,8 @@
 
         <img src="assets/images/bunny.png" alt="Бъни" id="bunny">
 
-        <audio id="bunny-audio" src="assets/audio/welcomeBunny.wav" preload="auto"></audio>
+        <audio id="bunny-audio" src="assets/audio/welcomeBunny.mp3" preload="auto"></audio>
 
-        <script src="js/auth.js?v=4"></script>
 <script>
 // Проверява автентикация при зареждане на страницата
 (async function() {
@@ -280,20 +281,22 @@ function updateNavigation() {
 
         for (var i = 0; i < articles.length; i += cardsPerPage) {
             var page = document.createElement("div");
-            page.className = "articles-carousel-page";
             var slice = articles.slice(i, i + cardsPerPage);
+            page.className = "articles-carousel-page" + (slice.length === 1 ? " articles-carousel-page--single" : "");
             slice.forEach(function(a) {
                 var card = document.createElement("div");
                 card.className = "article-card article-card-carousel";
                 card.innerHTML = renderCard(a);
                 page.appendChild(card);
             });
-            // Keep consistent layout: fill remaining slots with invisible spacers
-            for (var s = slice.length; s < cardsPerPage; s++) {
-                var spacer = document.createElement("div");
-                spacer.className = "articles-carousel-spacer";
-                spacer.setAttribute("aria-hidden", "true");
-                page.appendChild(spacer);
+            // Fill remaining slots with spacers (skip if only 1 card – use --single layout)
+            if (slice.length > 1) {
+                for (var s = slice.length; s < cardsPerPage; s++) {
+                    var spacer = document.createElement("div");
+                    spacer.className = "articles-carousel-spacer";
+                    spacer.setAttribute("aria-hidden", "true");
+                    page.appendChild(spacer);
+                }
             }
             carouselInner.appendChild(page);
         }
