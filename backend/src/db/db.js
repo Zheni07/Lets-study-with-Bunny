@@ -36,9 +36,9 @@ function getPgPool() {
     assertPgConfigured();
     pgPool = new Pool({
       connectionString: env.DATABASE_URL,
-      ssl: env.DATABASE_URL.includes("sslmode=require")
-        ? { rejectUnauthorized: false }
-        : undefined,
+      // Supabase Postgres/pooler uses TLS; on some Windows networks the cert chain
+      // is intercepted or missing roots, so we relax verification for development.
+      ssl: { rejectUnauthorized: false },
     });
     console.log("✓ Postgres pool created");
   }
