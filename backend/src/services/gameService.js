@@ -1,11 +1,11 @@
 const { listGames, findById } = require("../repositories/gameRepository");
 
-function getAllGames() {
+async function getAllGames() {
   return listGames();
 }
 
-function getGameById(id) {
-  const game = findById(id);
+async function getGameById(id) {
+  const game = await findById(id);
   if (!game) {
     const error = new Error("Game not found");
     error.status = 404;
@@ -14,8 +14,8 @@ function getGameById(id) {
   return game;
 }
 
-function getGamePreview(id) {
-  const game = findById(id);
+async function getGamePreview(id) {
+  const game = await findById(id);
   if (!game) {
     const error = new Error("Game not found");
     error.status = 404;
@@ -29,8 +29,8 @@ function getGamePreview(id) {
   };
 }
 
-function getGamePlayUrl(id) {
-  const game = findById(id);
+async function getGamePlayUrl(id) {
+  const game = await findById(id);
   if (!game) {
     const error = new Error("Game not found");
     error.status = 404;

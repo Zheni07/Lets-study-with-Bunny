@@ -10,7 +10,7 @@ const router = express.Router();
 // GET /api/articles - Public access (all roles including guest)
 router.get("/", async (req, res, next) => {
   try {
-    const articles = articleService.getAllArticles();
+    const articles = await articleService.getAllArticles();
     res.json({ articles });
   } catch (error) {
     next(error);
@@ -20,7 +20,7 @@ router.get("/", async (req, res, next) => {
 // GET /api/articles/:id - Public access
 router.get("/:id", async (req, res, next) => {
   try {
-    const article = articleService.getArticleById(Number(req.params.id));
+    const article = await articleService.getArticleById(Number(req.params.id));
     res.json({ article });
   } catch (error) {
     next(error);
@@ -44,7 +44,7 @@ router.post(
         imagePath = `/uploads/${req.file.filename}`;
       }
 
-      const article = articleService.createNewArticle({
+      const article = await articleService.createNewArticle({
         title,
         shortDescription,
         content,
@@ -80,7 +80,7 @@ router.put(
         imagePath = null;
       }
 
-      const article = articleService.updateExistingArticle(Number(req.params.id), {
+      const article = await articleService.updateExistingArticle(Number(req.params.id), {
         title,
         shortDescription,
         content,
@@ -101,7 +101,7 @@ router.delete(
   requireRole("admin"),
   async (req, res, next) => {
     try {
-      const result = articleService.removeArticle(Number(req.params.id));
+      const result = await articleService.removeArticle(Number(req.params.id));
       res.json(result);
     } catch (error) {
       next(error);

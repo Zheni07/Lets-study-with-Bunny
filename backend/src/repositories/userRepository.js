@@ -1,4 +1,4 @@
-const { getDb } = require("../db/db");
+const { queryOne, query, exec } = require("../db/db");
 
 function mapUser(row) {
   if (!row) return null;
@@ -6,133 +6,57 @@ function mapUser(row) {
   return rest;
 }
 
-function findByEmail(email) {
-  const db = getDb();
-  return db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+async function findByEmail(email) {
+  return queryOne("SELECT * FROM users WHERE email = $1", [email]);
 }
 
-function findById(id) {
-  const db = getDb();
-  return db.prepare("SELECT * FROM users WHERE id = ?").get(id);
+async function findById(id) {
+  return queryOne("SELECT * FROM users WHERE id = $1", [id]);
 }
 
-function createUser({ username, email, passwordHash, role = "user" }) {
-  const db = getDb();
-  
+async function createUser({ username, email, passwordHash, role = "user" }) {
   try {
-    console.log(`[createUser] Attempting to create user: ${email}`);
-    
-    // Prepare statement once for better performance
-    const insertStmt = db.prepare(
-      "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)"
+    const res = await exec(
+      "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
+      [username, email, passwordHash, role]
     );
-    
-    console.log(`[createUser] Executing INSERT for: ${username}, ${email}`);
-    
-    // Execute insert - better-sqlite3 auto-commits
-    const res = insertStmt.run(username, email, passwordHash, role);
-    
-    console.log(`[createUser] Insert result:`, {
-      changes: res.changes,
-      lastInsertRowid: res.lastInsertRowid
-    });
-    
-    if (!res.lastInsertRowid) {
-      throw new Error("Failed to create user: no ID returned from INSERT");
-    }
-    
-    if (res.changes !== 1) {
-      throw new Error(`Failed to create user: expected 1 change, got ${res.changes}`);
-    }
-    
-    console.log(`[createUser] User inserted with ID: ${res.lastInsertRowid}`);
-    
-    // Use a transaction to ensure we can read immediately after write
-    const user = db.transaction(() => {
-      return db.prepare("SELECT * FROM users WHERE id = ?").get(res.lastInsertRowid);
-    })();
-    
-    if (!user) {
-      // Try one more time without transaction
-      const userRetry = db.prepare("SELECT * FROM users WHERE id = ?").get(res.lastInsertRowid);
-      if (!userRetry) {
-        throw new Error("Failed to retrieve created user immediately after insert");
-      }
-      console.log(`[createUser] User verified in database (retry): ${userRetry.email}`);
-      return userRetry;
-    }
-    
-    console.log(`[createUser] User verified in database: ${user.email}`);
-    
-    return user;
+    return res.rows[0];
   } catch (error) {
-    console.error("[createUser] Error creating user:", error.message);
-    console.error("[createUser] Error code:", error.code);
-    console.error("[createUser] Error stack:", error.stack);
-    
-    // If it's a locking error, provide helpful message
-    if (error.code === 'SQLITE_BUSY' || error.message.includes('locked')) {
-      const helpfulError = new Error(
-        "Database is locked. Close DB Browser for SQLite and try again."
-      );
-      helpfulError.status = 503;
-      helpfulError.expose = true;
-      throw helpfulError;
-    }
-    
-    // Handle UNIQUE constraint violation (duplicate email)
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message.includes('UNIQUE constraint')) {
-      const helpfulError = new Error(
-        "User with this email already exists"
-      );
+    // Normalize unique violations across DBs
+    const msg = String(error?.message || "");
+    const code = String(error?.code || "");
+    const isUnique =
+      code === "23505" || // postgres unique_violation
+      msg.includes("UNIQUE constraint") ||
+      msg.toLowerCase().includes("unique");
+    if (isUnique) {
+      const helpfulError = new Error("User with this email already exists");
       helpfulError.status = 400;
       helpfulError.expose = true;
       throw helpfulError;
     }
-    
-    // For other database errors, expose them as 400 if they're constraint violations
-    if (error.code && error.code.startsWith('SQLITE_CONSTRAINT')) {
-      const helpfulError = new Error(
-        "Invalid data provided. Please check your input."
-      );
-      helpfulError.status = 400;
-      helpfulError.expose = true;
-      throw helpfulError;
-    }
-    
-    // Re-throw with status if not set
-    if (!error.status) {
-      error.status = 500;
-    }
-    error.expose = true; // Expose error message
     throw error;
   }
 }
 
-function listUsers() {
-  const db = getDb();
-  const rows = db
-    .prepare(
-      "SELECT id, username, email, role, createdAt FROM users ORDER BY createdAt DESC"
-    )
-    .all();
-  return rows;
+async function listUsers() {
+  return query(
+    "SELECT id, username, email, role, createdAt FROM users ORDER BY createdAt DESC",
+    []
+  );
 }
 
-function deleteUser(id) {
-  const db = getDb();
-  return db.prepare("DELETE FROM users WHERE id = ?").run(id);
+async function deleteUser(id) {
+  return exec("DELETE FROM users WHERE id = $1", [id]);
 }
 
-function updateUserRole(id, role) {
-  const db = getDb();
-  db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, id);
+async function updateUserRole(id, role) {
+  await exec("UPDATE users SET role = $1 WHERE id = $2", [role, id]);
   return findById(id);
 }
 
-function updateUserPassword(id, passwordHash) {
-  const db = getDb();
-  db.prepare("UPDATE users SET password = ? WHERE id = ?").run(passwordHash, id);
+async function updateUserPassword(id, passwordHash) {
+  await exec("UPDATE users SET password = $1 WHERE id = $2", [passwordHash, id]);
   return findById(id);
 }
 

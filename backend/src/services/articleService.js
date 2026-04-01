@@ -23,12 +23,12 @@ function safeUnlinkUpload(imagePath) {
   }
 }
 
-function getAllArticles() {
+async function getAllArticles() {
   return findAll();
 }
 
-function getArticleById(id) {
-  const article = findById(id);
+async function getArticleById(id) {
+  const article = await findById(id);
   if (!article) {
     const error = new Error("Article not found");
     error.status = 404;
@@ -37,7 +37,7 @@ function getArticleById(id) {
   return article;
 }
 
-function createNewArticle({ title, shortDescription, content, image, createdBy }) {
+async function createNewArticle({ title, shortDescription, content, image, createdBy }) {
   // Validate required fields
   if (!title || !content) {
     const error = new Error("Title and content are required");
@@ -55,8 +55,8 @@ function createNewArticle({ title, shortDescription, content, image, createdBy }
   });
 }
 
-function updateExistingArticle(id, { title, shortDescription, content, image }) {
-  const existing = findById(id);
+async function updateExistingArticle(id, { title, shortDescription, content, image }) {
+  const existing = await findById(id);
   if (!existing) {
     const error = new Error("Article not found");
     error.status = 404;
@@ -79,15 +79,15 @@ function updateExistingArticle(id, { title, shortDescription, content, image }) 
   });
 }
 
-function removeArticle(id) {
-  const article = findById(id);
+async function removeArticle(id) {
+  const article = await findById(id);
   if (!article) {
     const error = new Error("Article not found");
     error.status = 404;
     throw error;
   }
 
-  deleteArticle(id);
+  await deleteArticle(id);
   return { message: "Article deleted successfully" };
 }
 

@@ -16,7 +16,7 @@ async function main() {
     console.log("✓ Data directories created");
 
     // Initialize database (creates tables and seeds data)
-    initDb();
+    await initDb();
 
     const app = createApp();
     app.listen(env.PORT, "0.0.0.0", () => {

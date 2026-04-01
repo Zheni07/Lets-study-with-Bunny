@@ -32,7 +32,7 @@ router.post("/login", async (req, res, next) => {
 // GET /api/auth/me
 router.get("/me", requireAuth, async (req, res, next) => {
   try {
-    const user = authService.getCurrentUser(req.user.id);
+    const user = await authService.getCurrentUser(req.user.id);
     res.json({ user });
   } catch (error) {
     next(error);

@@ -1,67 +1,133 @@
 const path = require("path");
+const fs = require("fs");
 const bcrypt = require("bcrypt");
 const Database = require("better-sqlite3");
+const { Pool } = require("pg");
 const { env } = require("../config/env");
-const fs = require("fs");
 
-let dbInstance;
+let sqliteInstance;
+let pgPool;
 
-function getDb() {
-  if (!dbInstance) {
-    const dbPath = path.resolve(path.join(__dirname, "..", "..", env.DB_PATH));
-    console.log(`Database path: ${dbPath}`);
-    
-    // Ensure directory exists
-    const dbDir = path.dirname(dbPath);
-    if (!require("fs").existsSync(dbDir)) {
-      require("fs").mkdirSync(dbDir, { recursive: true });
-      console.log(`Created database directory: ${dbDir}`);
-    }
-    
-    try {
-      // Open database with write access and WAL mode for better concurrency
-      dbInstance = new Database(dbPath, { 
-        verbose: (sql) => {
-          // Only log errors, not all queries
-          if (sql.includes("ERROR") || sql.includes("FAIL")) {
-            console.log("[SQL]", sql);
-          }
-        }
-      });
-      
-      // Enable WAL mode for better concurrency (allows DB Browser to read while we write)
-      dbInstance.pragma("journal_mode = WAL");
-      
-      // Enable foreign keys
-      dbInstance.pragma("foreign_keys = ON");
-      
-      // Set busy timeout to handle locks gracefully
-      dbInstance.pragma("busy_timeout = 5000");
-      
-      // Test write access
-      try {
-        const testResult = dbInstance.prepare("SELECT 1 as test").get();
-        if (!testResult || testResult.test !== 1) {
-          throw new Error("Database read test failed");
-        }
-      } catch (testError) {
-        console.error("Database read test failed:", testError);
-        throw testError;
-      }
-      
-      console.log(`✓ Database connected: ${dbPath}`);
-      console.log(`✓ Database is writable (WAL mode enabled)`);
-    } catch (error) {
-      console.error(`✗ Failed to connect to database at ${dbPath}:`, error);
-      throw error;
-    }
+function assertPgConfigured() {
+  if (!env.DATABASE_URL) {
+    throw new Error(
+      "Missing DATABASE_URL. Set DB_KIND=postgres and provide DATABASE_URL in backend/.env"
+    );
   }
-  return dbInstance;
 }
 
-function migrate() {
-  const db = getDb();
+function getSqliteDb() {
+  if (!sqliteInstance) {
+    const dbPath = path.resolve(path.join(__dirname, "..", "..", env.DB_PATH));
+    const dbDir = path.dirname(dbPath);
+    if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
+    sqliteInstance = new Database(dbPath);
+    sqliteInstance.pragma("journal_mode = WAL");
+    sqliteInstance.pragma("foreign_keys = ON");
+    sqliteInstance.pragma("busy_timeout = 5000");
+    console.log(`✓ SQLite connected: ${dbPath}`);
+  }
+  return sqliteInstance;
+}
+
+function getPgPool() {
+  if (!pgPool) {
+    assertPgConfigured();
+    pgPool = new Pool({
+      connectionString: env.DATABASE_URL,
+      ssl: env.DATABASE_URL.includes("sslmode=require")
+        ? { rejectUnauthorized: false }
+        : undefined,
+    });
+    console.log("✓ Postgres pool created");
+  }
+  return pgPool;
+}
+
+function expandSqliteParams(sql, params = []) {
+  // Convert $1, $2... to ? and expand params in appearance order.
+  const outParams = [];
+  const outSql = sql.replace(/\$(\d+)/g, (_m, nStr) => {
+    const idx = Number(nStr) - 1;
+    outParams.push(params[idx]);
+    return "?";
+  });
+  return { sql: outSql, params: outParams };
+}
+
+async function query(sql, params = []) {
+  if (env.DB_KIND === "postgres") {
+    const pool = getPgPool();
+    const res = await pool.query(sql, params);
+    return res.rows;
+  }
+  const db = getSqliteDb();
+  const norm = expandSqliteParams(sql, params);
+  return db.prepare(norm.sql).all(norm.params);
+}
+
+async function queryOne(sql, params = []) {
+  const rows = await query(sql, params);
+  return rows[0];
+}
+
+async function exec(sql, params = []) {
+  if (env.DB_KIND === "postgres") {
+    const pool = getPgPool();
+    const res = await pool.query(sql, params);
+    return { rowCount: res.rowCount, rows: res.rows };
+  }
+  const db = getSqliteDb();
+  const norm = expandSqliteParams(sql, params);
+  const stmt = db.prepare(norm.sql);
+  const isReturning = /\breturning\b/i.test(sql);
+  if (isReturning) {
+    // SQLite supports RETURNING since 3.35, better-sqlite3 supports it.
+    const row = stmt.get(norm.params);
+    return { rowCount: row ? 1 : 0, rows: row ? [row] : [] };
+  }
+  const res = stmt.run(norm.params);
+  return { rowCount: res.changes, lastInsertId: res.lastInsertRowid };
+}
+
+async function migratePostgres() {
+  const pool = getPgPool();
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS schema_migrations (
+      id TEXT PRIMARY KEY,
+      applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`
+  );
+
+  const migrationsDir = path.join(__dirname, "migrations");
+  const files = fs
+    .readdirSync(migrationsDir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
+
+  for (const file of files) {
+    const already = await pool.query(
+      "SELECT 1 FROM schema_migrations WHERE id = $1 LIMIT 1",
+      [file]
+    );
+    if (already.rowCount > 0) continue;
+    const sql = fs.readFileSync(path.join(migrationsDir, file), "utf8");
+    await pool.query("BEGIN");
+    try {
+      await pool.query(sql);
+      await pool.query("INSERT INTO schema_migrations (id) VALUES ($1)", [file]);
+      await pool.query("COMMIT");
+      console.log(`✓ Applied migration: ${file}`);
+    } catch (e) {
+      await pool.query("ROLLBACK");
+      throw e;
+    }
+  }
+}
+
+async function migrateSqlite() {
+  const db = getSqliteDb();
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,73 +168,29 @@ function migrate() {
   `);
 }
 
-function seed() {
-  const db = getDb();
-
-  // Admin must be an actual user with a real email
+async function seedCommon() {
   const adminEmail = "dislexia.bunny@gmail.com";
+  const passwordHash = bcrypt.hashSync("Admin123!", 10);
 
-  // Ensure the admin role is tied to this exact email
-  const adminByEmail = db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1").get(adminEmail);
-  if (!adminByEmail) {
-    const passwordHash = bcrypt.hashSync("Admin123!", 10);
-    db.prepare(
-      "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)"
-    ).run("Admin", adminEmail, passwordHash, "admin");
+  // Ensure admin exists and is admin
+  const admin = await queryOne("SELECT id, email, role FROM users WHERE email = $1 LIMIT 1", [
+    adminEmail,
+  ]);
+  if (!admin) {
+    await exec(
+      "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4)",
+      ["Admin", adminEmail, passwordHash, "admin"]
+    );
   } else {
-    db.prepare("UPDATE users SET role = 'admin' WHERE email = ?").run(adminEmail);
+    await exec("UPDATE users SET role = 'admin' WHERE email = $1", [adminEmail]);
   }
-
-  // Demote any other admins so only the real admin email can access admin endpoints
-  db.prepare("UPDATE users SET role = 'user' WHERE role = 'admin' AND email != ?").run(adminEmail);
-
-  // Seed articles (from repo JSON) if empty
-  const articleCount = db.prepare("SELECT COUNT(1) as count FROM articles").get().count;
-  if (articleCount === 0) {
-    try {
-      const seedPath = path.resolve(path.join(__dirname, "..", "..", "seed", "articles.json"));
-      if (fs.existsSync(seedPath)) {
-        const raw = fs.readFileSync(seedPath, "utf8");
-        const items = JSON.parse(raw);
-        if (Array.isArray(items) && items.length > 0) {
-          const adminId = db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1").get(adminEmail)?.id;
-          const stmt = db.prepare(
-            "INSERT INTO articles (title, shortDescription, content, image, createdBy) VALUES (?, ?, ?, ?, ?)"
-          );
-
-          const insertMany = db.transaction((rows) => {
-            rows.forEach((a) => {
-              const title = typeof a?.title === "string" ? a.title : "";
-              const shortDescription =
-                typeof a?.shortDescription === "string" ? a.shortDescription : "";
-              const content = typeof a?.content === "string" ? a.content : "";
-              const image = typeof a?.image === "string" ? a.image : null;
-              if (!title || !content) return; // keep DB consistent (title/content are required)
-              stmt.run(title, shortDescription, content, image, adminId || null);
-            });
-          });
-
-          insertMany(items);
-          const after = db.prepare("SELECT COUNT(1) as count FROM articles").get().count;
-          console.log(`✓ Seeded articles from ${seedPath} (${after} total)`);
-        } else {
-          console.log(`ℹ No seed articles found in ${seedPath}`);
-        }
-      } else {
-        console.log(`ℹ Seed file not found: ${seedPath}`);
-      }
-    } catch (e) {
-      console.warn("⚠ Failed to seed articles (continuing):", e?.message || e);
-    }
-  }
+  await exec("UPDATE users SET role = 'user' WHERE role = 'admin' AND email != $1", [
+    adminEmail,
+  ]);
 
   // Seed games if empty
-  const gamesCount = db.prepare("SELECT COUNT(1) as count FROM games").get()
-    .count;
-  if (gamesCount === 0) {
-    const stmt = db.prepare(
-      "INSERT INTO games (name, previewVideoUrl, gameUrl) VALUES (?, ?, ?)"
-    );
+  const games = await queryOne("SELECT COUNT(1) as count FROM games", []);
+  if (Number(games?.count || 0) === 0) {
     const seedGames = [
       {
         name: "Letter Match",
@@ -186,31 +208,89 @@ function seed() {
         gameUrl: "https://example.com/games/speed-reader",
       },
     ];
-    seedGames.forEach((g) => stmt.run(g.name, g.previewVideoUrl, g.gameUrl));
+    for (const g of seedGames) {
+      await exec("INSERT INTO games (name, previewVideoUrl, gameUrl) VALUES ($1, $2, $3)", [
+        g.name,
+        g.previewVideoUrl,
+        g.gameUrl,
+      ]);
+    }
+  }
+
+  // Seed articles from repo JSON if empty
+  const articles = await queryOne("SELECT COUNT(1) as count FROM articles", []);
+  if (Number(articles?.count || 0) === 0) {
+    const seedPath = path.resolve(path.join(__dirname, "..", "..", "seed", "articles.json"));
+    if (fs.existsSync(seedPath)) {
+      try {
+        const raw = fs.readFileSync(seedPath, "utf8");
+        const items = JSON.parse(raw);
+        if (Array.isArray(items) && items.length > 0) {
+          const adminRow = await queryOne(
+            "SELECT id FROM users WHERE email = $1 LIMIT 1",
+            [adminEmail]
+          );
+          const adminId = adminRow?.id ?? null;
+          for (const a of items) {
+            const title = typeof a?.title === "string" ? a.title : "";
+            const shortDescription =
+              typeof a?.shortDescription === "string" ? a.shortDescription : "";
+            const content = typeof a?.content === "string" ? a.content : "";
+            const image = typeof a?.image === "string" ? a.image : null;
+            if (!title || !content) continue;
+            await exec(
+              "INSERT INTO articles (title, shortDescription, content, image, createdBy) VALUES ($1, $2, $3, $4, $5)",
+              [title, shortDescription, content, image, adminId]
+            );
+          }
+        }
+      } catch (e) {
+        console.warn("⚠ Failed to seed articles (continuing):", e?.message || e);
+      }
+    }
   }
 }
 
-function initDb() {
-  try {
-    console.log("Initializing database...");
-    migrate();
-    console.log("✓ Database tables created/verified");
-    seed();
-    console.log("✓ Database seeded with initial data");
-    
-    // Verify database is working
-    const db = getDb();
-    const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get().count;
-    const gameCount = db.prepare("SELECT COUNT(*) as count FROM games").get().count;
-    console.log(`✓ Database ready: ${userCount} user(s), ${gameCount} game(s)`);
-  } catch (error) {
-    console.error("✗ Database initialization failed:", error);
-    throw error;
+async function initDb() {
+  console.log(`Initializing database (DB_KIND=${env.DB_KIND})...`);
+  if (env.DB_KIND === "postgres") {
+    await migratePostgres();
+  } else {
+    await migrateSqlite();
+  }
+  await seedCommon();
+  console.log("✓ Database initialized");
+}
+
+async function migrateOnly() {
+  console.log(`Running migrations (DB_KIND=${env.DB_KIND})...`);
+  if (env.DB_KIND === "postgres") {
+    await migratePostgres();
+  } else {
+    await migrateSqlite();
+  }
+  console.log("✓ Migrations complete");
+}
+
+async function closeDb() {
+  if (sqliteInstance) {
+    sqliteInstance.close();
+    sqliteInstance = undefined;
+  }
+  if (pgPool) {
+    await pgPool.end();
+    pgPool = undefined;
   }
 }
 
 module.exports = {
-  getDb,
   initDb,
+  migrateOnly,
+  closeDb,
+  query,
+  queryOne,
+  exec,
+  // Back-compat export (used by old scripts). Prefer query/exec in new code.
+  getDb: getSqliteDb,
 };
 

@@ -12,7 +12,7 @@ async function register({ username, email, password, role = "user" }) {
   
   // Check if user already exists
   console.log(`[authService.register] Checking if user exists: ${email}`);
-  const existingUser = findByEmail(email);
+  const existingUser = await findByEmail(email);
   if (existingUser) {
     console.log(`[authService.register] User already exists: ${email}`);
     const error = new Error("User with this email already exists");
@@ -44,7 +44,7 @@ async function register({ username, email, password, role = "user" }) {
 
   // Create user
   console.log(`[authService.register] Calling createUser...`);
-  const user = createUser({ username, email, passwordHash, role });
+  const user = await createUser({ username, email, passwordHash, role });
   console.log(`[authService.register] User created: ID=${user.id}, email=${user.email}`);
 
   // Generate token
@@ -59,7 +59,7 @@ async function register({ username, email, password, role = "user" }) {
 
 async function login({ email, password }) {
   // Find user
-  const user = findByEmail(email);
+  const user = await findByEmail(email);
   if (!user) {
     const error = new Error("Invalid email or password");
     error.status = 401;
@@ -83,8 +83,8 @@ async function login({ email, password }) {
   };
 }
 
-function getCurrentUser(userId) {
-  const user = findById(userId);
+async function getCurrentUser(userId) {
+  const user = await findById(userId);
   if (!user) {
     const error = new Error("User not found");
     error.status = 404;
@@ -107,7 +107,7 @@ function hashResetToken(token) {
 
 async function requestPasswordReset({ email, frontendBaseUrl }) {
   // Always return success message to avoid user enumeration
-  const user = findByEmail(email);
+  const user = await findByEmail(email);
   if (!user) {
     return { message: "Ако има акаунт с този имейл, ще получите инструкции за смяна на парола." };
   }
@@ -116,7 +116,7 @@ async function requestPasswordReset({ email, frontendBaseUrl }) {
   const tokenHash = hashResetToken(rawToken);
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
 
-  createResetToken({ userId: user.id, tokenHash, expiresAt });
+  await createResetToken({ userId: user.id, tokenHash, expiresAt });
 
   const base = frontendBaseUrl || "";
   const resetUrl = base
@@ -170,7 +170,7 @@ async function resetPassword({ token, newPassword }) {
   }
 
   const tokenHash = hashResetToken(token);
-  const row = findValidResetToken(tokenHash);
+  const row = await findValidResetToken(tokenHash);
   if (!row) {
     const error = new Error("Невалиден или изтекъл token.");
     error.status = 400;
@@ -191,8 +191,8 @@ async function resetPassword({ token, newPassword }) {
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 10);
-  updateUserPassword(row.userId, passwordHash);
-  markTokenUsed(row.id);
+  await updateUserPassword(row.userId, passwordHash);
+  await markTokenUsed(row.id);
 
   return { message: "Паролата е сменена успешно. Можете да влезете с новата парола." };
 }

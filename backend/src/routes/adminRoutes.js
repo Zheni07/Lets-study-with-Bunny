@@ -14,7 +14,7 @@ router.use(requireAdminEmail);
 // GET /api/admin/users - Get all users
 router.get("/users", async (req, res, next) => {
   try {
-    const users = adminService.getAllUsers();
+    const users = await adminService.getAllUsers();
     res.json({ users });
   } catch (error) {
     next(error);
@@ -33,7 +33,7 @@ router.delete("/users/:id", async (req, res, next) => {
       });
     }
 
-    const result = adminService.deleteUserById(userId);
+    const result = await adminService.deleteUserById(userId);
     res.json(result);
   } catch (error) {
     next(error);
@@ -59,7 +59,7 @@ router.put("/users/:id/role", async (req, res, next) => {
       });
     }
 
-    const user = adminService.changeUserRole(userId, role);
+    const user = await adminService.changeUserRole(userId, role);
     res.json({ user });
   } catch (error) {
     next(error);

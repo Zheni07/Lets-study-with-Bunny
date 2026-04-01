@@ -9,7 +9,7 @@ const router = express.Router();
 // Guests see games without gameUrl, authenticated users see full game info
 router.get("/", optionalAuth, async (req, res, next) => {
   try {
-    const games = gameService.getAllGames();
+    const games = await gameService.getAllGames();
     // If user is authenticated and has user/admin role, include gameUrl
     if (req.user && (req.user.role === "user" || req.user.role === "admin")) {
       res.json({ games });
@@ -30,7 +30,7 @@ router.get("/", optionalAuth, async (req, res, next) => {
 // GET /api/games/:id/preview - Public access (guest can access)
 router.get("/:id/preview", async (req, res, next) => {
   try {
-    const game = gameService.getGamePreview(Number(req.params.id));
+    const game = await gameService.getGamePreview(Number(req.params.id));
     res.json({ game });
   } catch (error) {
     next(error);
@@ -44,7 +44,7 @@ router.get(
   requireRole("user", "admin"),
   async (req, res, next) => {
     try {
-      const game = gameService.getGamePlayUrl(Number(req.params.id));
+      const game = await gameService.getGamePlayUrl(Number(req.params.id));
       res.json({ game });
     } catch (error) {
       next(error);

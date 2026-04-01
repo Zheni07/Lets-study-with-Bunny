@@ -1,29 +1,26 @@
-const { getDb } = require("../db/db");
+const { exec, queryOne } = require("../db/db");
 
-function createResetToken({ userId, tokenHash, expiresAt }) {
-  const db = getDb();
-  db.prepare(
-    "INSERT INTO password_reset_tokens (userId, tokenHash, expiresAt) VALUES (?, ?, ?)"
-  ).run(userId, tokenHash, expiresAt);
+async function createResetToken({ userId, tokenHash, expiresAt }) {
+  await exec(
+    "INSERT INTO password_reset_tokens (userId, tokenHash, expiresAt) VALUES ($1, $2, $3)",
+    [userId, tokenHash, expiresAt]
+  );
 }
 
-function findValidResetToken(tokenHash) {
-  const db = getDb();
-  return db
-    .prepare(
-      `SELECT id, userId, tokenHash, expiresAt, usedAt
-       FROM password_reset_tokens
-       WHERE tokenHash = ?
-       LIMIT 1`
-    )
-    .get(tokenHash);
+async function findValidResetToken(tokenHash) {
+  return queryOne(
+    `SELECT id, userId, tokenHash, expiresAt, usedAt
+     FROM password_reset_tokens
+     WHERE tokenHash = $1
+     LIMIT 1`,
+    [tokenHash]
+  );
 }
 
-function markTokenUsed(id) {
-  const db = getDb();
-  db.prepare(
-    "UPDATE password_reset_tokens SET usedAt = CURRENT_TIMESTAMP WHERE id = ?"
-  ).run(id);
+async function markTokenUsed(id) {
+  await exec("UPDATE password_reset_tokens SET usedAt = CURRENT_TIMESTAMP WHERE id = $1", [
+    id,
+  ]);
 }
 
 module.exports = {

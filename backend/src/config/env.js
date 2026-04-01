@@ -12,11 +12,18 @@ function required(name) {
   return v;
 }
 
+function optional(name) {
+  const v = process.env[name];
+  return v && String(v).trim().length > 0 ? v : undefined;
+}
+
 const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: Number(process.env.PORT || 4000),
   JWT_SECRET: required("JWT_SECRET"),
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "1d",
+  DB_KIND: (process.env.DB_KIND || "sqlite").toLowerCase(),
+  DATABASE_URL: optional("DATABASE_URL"),
   DB_PATH: process.env.DB_PATH || "./data/app.db",
   CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
   SMTP_HOST: process.env.SMTP_HOST || "",
