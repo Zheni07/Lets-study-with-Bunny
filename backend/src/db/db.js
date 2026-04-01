@@ -2,6 +2,7 @@ const path = require("path");
 const bcrypt = require("bcrypt");
 const Database = require("better-sqlite3");
 const { env } = require("../config/env");
+const fs = require("fs");
 
 let dbInstance;
 
@@ -120,6 +121,46 @@ function seed() {
 
   // Demote any other admins so only the real admin email can access admin endpoints
   db.prepare("UPDATE users SET role = 'user' WHERE role = 'admin' AND email != ?").run(adminEmail);
+
+  // Seed articles (from repo JSON) if empty
+  const articleCount = db.prepare("SELECT COUNT(1) as count FROM articles").get().count;
+  if (articleCount === 0) {
+    try {
+      const seedPath = path.resolve(path.join(__dirname, "..", "..", "seed", "articles.json"));
+      if (fs.existsSync(seedPath)) {
+        const raw = fs.readFileSync(seedPath, "utf8");
+        const items = JSON.parse(raw);
+        if (Array.isArray(items) && items.length > 0) {
+          const adminId = db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1").get(adminEmail)?.id;
+          const stmt = db.prepare(
+            "INSERT INTO articles (title, shortDescription, content, image, createdBy) VALUES (?, ?, ?, ?, ?)"
+          );
+
+          const insertMany = db.transaction((rows) => {
+            rows.forEach((a) => {
+              const title = typeof a?.title === "string" ? a.title : "";
+              const shortDescription =
+                typeof a?.shortDescription === "string" ? a.shortDescription : "";
+              const content = typeof a?.content === "string" ? a.content : "";
+              const image = typeof a?.image === "string" ? a.image : null;
+              if (!title || !content) return; // keep DB consistent (title/content are required)
+              stmt.run(title, shortDescription, content, image, adminId || null);
+            });
+          });
+
+          insertMany(items);
+          const after = db.prepare("SELECT COUNT(1) as count FROM articles").get().count;
+          console.log(`✓ Seeded articles from ${seedPath} (${after} total)`);
+        } else {
+          console.log(`ℹ No seed articles found in ${seedPath}`);
+        }
+      } else {
+        console.log(`ℹ Seed file not found: ${seedPath}`);
+      }
+    } catch (e) {
+      console.warn("⚠ Failed to seed articles (continuing):", e?.message || e);
+    }
+  }
 
   // Seed games if empty
   const gamesCount = db.prepare("SELECT COUNT(1) as count FROM games").get()

@@ -130,6 +130,11 @@ npm start      # Production mode
 The database is automatically initialized on first run with:
 - Default admin user: `dislexia.bunny@gmail.com` / `Admin123!`
 - Three sample games
+- Seed articles from `seed/articles.json` (only when the `articles` table is empty)
+
+### Why data "disappears" on a new device?
+
+The project uses a local SQLite file (`DB_PATH=./data/app.db`). The `data/` folder is intentionally ignored by git, so a fresh clone starts with a new empty DB file. On first run the backend creates the schema and seeds initial data.
 
 ## Authentication
 

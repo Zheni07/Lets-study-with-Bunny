@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
+    "seed": "node -e \"require('./src/db/db').initDb()\"",
     "test:db": "node test-database.js",
     "test:register": "node test-registration.js",
     "test:save": "node test-save-user.js",
