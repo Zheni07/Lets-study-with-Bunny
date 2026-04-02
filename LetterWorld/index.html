@@ -207,8 +207,17 @@
           canvas.className = "unity-mobile";
         } else {
           function resizeDesktopCanvas() {
-            var maxWidth = Math.max(320, window.innerWidth - 48);
-            var maxHeight = Math.max(200, window.innerHeight - 300);
+            var canvasWrap = document.querySelector(".game-canvas-wrap");
+            var rect = canvasWrap ? canvasWrap.getBoundingClientRect() : null;
+
+            // Resize relative to the card's canvas area (more consistent across screen sizes).
+            var maxWidth = Math.max(
+              320,
+              canvasWrap ? Math.floor(canvasWrap.clientWidth) : window.innerWidth - 48
+            );
+            var topOffset = rect ? rect.top : 0;
+            var availableHeight = window.innerHeight - topOffset - 40; // header/padding reserve
+            var maxHeight = Math.max(200, Math.floor(availableHeight));
             var aspect = 960 / 600;
             var width = maxWidth;
             var height = width / aspect;
