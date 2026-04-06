@@ -203,7 +203,7 @@
 </footer>
 
 <script>
-    var apiBase = (typeof getApiBase === "function" ? getApiBase() : (window.location.protocol + "//" + window.location.hostname + ":4000/api"));
+    var apiBase = (typeof getApiBase === "function" ? getApiBase() : (window.location.origin + "/api"));
 
     function authHeaders() {
         var token = getToken();
@@ -256,7 +256,7 @@
         } catch (err) {
             loading.style.display = "none";
             table.style.display = "table";
-            tbody.innerHTML = "<tr><td colspan='6' class='message error'>Грешка: " + err.message + " (проверете дали backend работи на " + window.location.hostname + ":4000)</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='6' class='message error'>Грешка: " + err.message + " (проверете дали backend е достъпен на " + apiBase + ")</td></tr>";
         }
     }
 
@@ -363,7 +363,7 @@
             var wrap = document.getElementById("edit-current-image-wrap");
             var link = document.getElementById("edit-current-image-link");
             if (a.image) {
-                var baseUrl = window.location.protocol + "//" + window.location.hostname + ":4000";
+                var baseUrl = window.location.origin;
                 link.href = a.image.indexOf("http") === 0 ? a.image : baseUrl + (a.image.indexOf("/") === 0 ? "" : "/") + a.image;
                 wrap.style.display = "block";
             } else {

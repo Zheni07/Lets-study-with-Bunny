@@ -200,7 +200,7 @@ function updateNavigation() {
 
 <script>
 (function() {
-    var api = (typeof getApiBase === "function" ? getApiBase() : (window.location.protocol + "//" + window.location.hostname + ":4000/api"));
+    var api = (typeof getApiBase === "function" ? getApiBase() : (window.location.origin + "/api"));
     var container = document.getElementById("articles-container");
     var carouselOuter = document.getElementById("articles-carousel-outer");
     var carouselInner = document.getElementById("articles-carousel-inner");
@@ -376,8 +376,7 @@ function updateNavigation() {
         })
         .catch(function(err) {
             loading.style.display = "none";
-            var host = window.location.hostname;
-            empty.textContent = "Грешка при зареждане на статии. Уверете се, че backend работи на " + host + ":4000 (същият хост като тази страница).";
+            empty.textContent = "Грешка при зареждане на статии. Уверете се, че backend е достъпен на " + api + ".";
             empty.style.display = "block";
         });
 })();

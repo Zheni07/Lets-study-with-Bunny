@@ -94,7 +94,7 @@
 <script src="js/auth.js?v=4"></script>
 
 <script>
-var apiBase = (typeof getApiBase === "function" ? getApiBase() : (window.location.protocol + "//" + window.location.hostname + ":4000/api"));
+var apiBase = (typeof getApiBase === "function" ? getApiBase() : (window.location.origin + "/api"));
 /* Меню според ролята */
 const role = getRole();
 const nav = document.getElementById("nav");
@@ -190,7 +190,7 @@ async function registerUser() {
         
         // Check if it's a network error
         if (error.message === "Failed to fetch" || error.name === "TypeError") {
-            messageDiv.textContent = "Грешка: Не може да се свърже със сървъра. Проверете дали backend-ът работи на " + (window.location.protocol + "//" + window.location.hostname + ":4000");
+            messageDiv.textContent = "Грешка: Не може да се свърже със сървъра. Проверете дали backend-ът е достъпен на " + apiBase;
         } else {
             messageDiv.textContent = "Грешка: " + error.message;
         }

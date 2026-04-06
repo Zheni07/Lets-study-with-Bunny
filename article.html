@@ -77,8 +77,8 @@
 
 <script>
 (function() {
-    var api = (typeof getApiBase === "function" ? getApiBase() : (window.location.protocol + "//" + window.location.hostname + ":4000/api"));
-    var baseUrl = (window.location.protocol + "//" + window.location.hostname + ":4000");
+    var api = (typeof getApiBase === "function" ? getApiBase() : (window.location.origin + "/api"));
+    var baseUrl = window.location.origin;
     var params = new URLSearchParams(window.location.search);
     var id = params.get("id");
     var loading = document.getElementById("article-loading");
@@ -182,8 +182,7 @@
         })
         .catch(function() {
             loading.style.display = "none";
-            var host = window.location.hostname;
-            error.textContent = "Грешка при зареждане. Уверете се, че backend работи на " + host + ":4000 (същият хост като страницата).";
+            error.textContent = "Грешка при зареждане. Уверете се, че backend е достъпен на " + api + ".";
             error.style.display = "block";
         });
 })();

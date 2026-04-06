@@ -1,6 +1,21 @@
-// API Base URL – same host as the page, port 4000 (works for 127.0.0.1 and IP like 172.20.10.11)
+// API Base URL
+// - Local dev fallback: same host, port 4000, path /api
+// - Production (Vercel): same origin, path /api (use Vercel rewrites to reach the backend)
+// - Optional override: set window.APP_CONFIG.API_BASE before loading this file
 function getApiBase() {
-    return window.location.protocol + "//" + window.location.hostname + ":4000/api";
+    const override = window.APP_CONFIG && window.APP_CONFIG.API_BASE;
+    if (typeof override === "string" && override.trim()) return override.trim().replace(/\/$/, "");
+
+    const isLocal =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "0.0.0.0";
+
+    if (isLocal) {
+        return window.location.protocol + "//" + window.location.hostname + ":4000/api";
+    }
+
+    return window.location.origin + "/api";
 }
 const API_BASE = getApiBase();
 
