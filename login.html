@@ -27,12 +27,12 @@
         <!-- Добавяме onsubmit -->
         <form onsubmit="event.preventDefault(); loginUser();">
             <div class="form-group">
-                <label>Имейл</label>
-                <input type="email" id="email" placeholder="Въведи имейл" required>
+                <label for="email">Имейл</label>
+                <input type="email" id="email" name="email" autocomplete="email" placeholder="Въведи имейл" required>
             </div>
             <div class="form-group">
-                <label>Парола</label>
-                <input type="password" id="password" placeholder="Въведи парола" required>
+                <label for="password">Парола</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" placeholder="Въведи парола" required>
             </div>
             <button type="submit" class="btn">Вход</button>
             <div id="login-message" style="margin-top: 10px;"></div>
