@@ -30,6 +30,7 @@ Lets-study-with-Bunny> cd backend
 
 3. Инсталиране на зависимости
 npm install
+copy .env.example .env
 
 4. Стартиране на бекенда
 npm run dev
