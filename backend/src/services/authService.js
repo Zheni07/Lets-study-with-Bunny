@@ -61,13 +61,16 @@ async function login({ email, password }) {
   // Find user
   const user = await findByEmail(email);
   if (!user) {
+    console.log(`[authService.login] User not found for email: ${email}`);
     const error = new Error("Invalid email or password");
     error.status = 401;
     throw error;
   }
 
   // Verify password
+  console.log(`[authService.login] Verifying password for user: ${user.id}, email: ${email}`);
   const isValid = await bcrypt.compare(password, user.password);
+  console.log(`[authService.login] Password valid: ${isValid}`);
   if (!isValid) {
     const error = new Error("Invalid email or password");
     error.status = 401;
@@ -156,6 +159,7 @@ async function requestPasswordReset({ email, frontendBaseUrl }) {
 }
 
 async function resetPassword({ token, newPassword }) {
+  console.log(`[authService.resetPassword] Called with token: ${token ? token.substring(0,10) + '...' : 'null'}, newPassword length: ${newPassword ? newPassword.length : 0}`);
   if (!token || typeof token !== "string") {
     const error = new Error("Невалиден или липсващ token.");
     error.status = 400;
@@ -191,8 +195,22 @@ async function resetPassword({ token, newPassword }) {
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 10);
-  await updateUserPassword(row.userId, passwordHash);
-  await markTokenUsed(row.id);
+  console.log(`[authService.resetPassword] Updating password for userId: ${row.userId}`);
+  try {
+    await updateUserPassword(row.userId, passwordHash);
+    console.log(`[authService.resetPassword] Password updated successfully`);
+  } catch (updateError) {
+    console.error(`[authService.resetPassword] Error updating password:`, updateError);
+    throw updateError;
+  }
+  console.log(`[authService.resetPassword] Marking token used: ${row.id}`);
+  try {
+    await markTokenUsed(row.id);
+    console.log(`[authService.resetPassword] Token marked used`);
+  } catch (markError) {
+    console.error(`[authService.resetPassword] Error marking token used:`, markError);
+    throw markError;
+  }
 
   return { message: "Паролата е сменена успешно. Можете да влезете с новата парола." };
 }
