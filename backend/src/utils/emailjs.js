@@ -24,6 +24,8 @@ async function sendResetEmail({ toEmail, resetUrl }) {
     throw err;
   }
 
+  const privateKey = String(env.EMAILJS_PRIVATE_KEY || "").trim();
+
   const payload = {
     service_id: env.EMAILJS_SERVICE_ID,
     template_id: env.EMAILJS_TEMPLATE_ID_RESET,
@@ -34,9 +36,9 @@ async function sendResetEmail({ toEmail, resetUrl }) {
     },
   };
 
-  // Optional (recommended for server): private key as accessToken
-  if (env.EMAILJS_PRIVATE_KEY) {
-    payload.accessToken = env.EMAILJS_PRIVATE_KEY;
+  // Server-side auth for EmailJS strict mode (REST API supports accessToken).
+  if (privateKey) {
+    payload.accessToken = privateKey;
   }
 
   const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {

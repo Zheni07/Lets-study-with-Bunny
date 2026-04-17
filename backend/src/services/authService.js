@@ -1,9 +1,7 @@
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-const { env } = require("../config/env");
 const { findByEmail, createUser, findById, mapUser, updateUserPassword } = require("../repositories/userRepository");
 const { createResetToken, findValidResetToken, markTokenUsed } = require("../repositories/passwordResetRepository");
-const { smtpConfigured, sendMail } = require("../utils/mailer");
 const { emailjsConfigured, sendResetEmail } = require("../utils/emailjs");
 const { signToken } = require("../utils/jwt");
 
@@ -126,36 +124,22 @@ async function requestPasswordReset({ email, frontendBaseUrl }) {
     ? `${base.replace(/\/+$/, "")}/reset-password.html?token=${rawToken}`
     : null;
 
-  // Preferred: EmailJS (works with Gmail Advanced Protection)
-  if (emailjsConfigured() && resetUrl) {
-    await sendResetEmail({ toEmail: user.email, resetUrl });
+  if (!resetUrl) {
+    const error = new Error("Липсва frontendBaseUrl за генериране на reset линк.");
+    error.status = 400;
+    error.expose = true;
+    throw error;
+  }
+
+  if (!emailjsConfigured()) {
+    const error = new Error("EmailJS не е конфигуриран коректно.");
+    error.status = 500;
+    error.expose = true;
+    throw error;
+  }
+
+  await sendResetEmail({ toEmail: user.email, resetUrl });
     return { message: "Изпратихме имейл с линк за смяна на парола (ако акаунтът съществува)." };
-  }
-
-  // Send real email if SMTP configured
-  if (smtpConfigured() && resetUrl) {
-    const subject = "Смяна на парола — Да учим с Бъни";
-    const text =
-      "Заявихте смяна на парола.\n\n" +
-      `Линк за смяна на парола (валиден 1 час):\n${resetUrl}\n\n` +
-      "Ако не сте вие, игнорирайте този имейл.";
-    const html =
-      "<p>Заявихте смяна на парола.</p>" +
-      `<p><a href="${resetUrl}">Натиснете тук, за да смените паролата</a> (валиден 1 час).</p>` +
-      "<p>Ако не сте вие, игнорирайте този имейл.</p>";
-    await sendMail({ to: user.email, subject, text, html });
-    return { message: "Изпратихме имейл с линк за смяна на парола (ако акаунтът съществува)." };
-  }
-
-  // Dev-friendly fallback (no SMTP)
-  if (env.NODE_ENV === "development") {
-    return {
-      message: "EmailJS/SMTP не са настроени. Линкът за смяна на парола е генериран (dev режим).",
-      resetUrl,
-    };
-  }
-
-  return { message: "Ако има акаунт с този имейл, ще получите инструкции за смяна на парола." };
 }
 
 async function resetPassword({ token, newPassword }) {
